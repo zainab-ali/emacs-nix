@@ -5,11 +5,6 @@
 
 ;;; packages enabled by default
 (require 'evil)
-(require 'evil-collection)
-(require 'magit)
-(require 'ivy)
-(require 'counsel)
-(require 'swiper)
 (require 'projectile)
 
 ;;; Helper functions
@@ -25,6 +20,19 @@
 (toggle-scroll-bar 0)
 (display-battery-mode)
 
+
+(define-minor-mode code-mode
+  "Common bindings for coding.
+\\{code-mode-map}"
+  :keymap (make-sparse-keymap)
+  (display-line-numbers-mode))
+
+(evil-define-key 'normal code-mode-map
+  (kbd "C-c c c") 'comment-or-uncomment-line)
+
+(evil-define-key 'visual code-mode-map
+  (kbd "C-c c c") 'comment-or-uncomment-region)
+
 ;;; Customize Lisp-like languages
 (defconst
   lisp-mode-pretty-alist-1
@@ -37,9 +45,9 @@
 
 ;;; Customize emacs-lisp
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
-(add-hook 'emacs-lisp-mode-hook 'display-line-numbers-mode)
 (add-hook 'emacs-lisp-mode-hook (lambda ()
 				  (setq prettify-symbols-alist lisp-mode-pretty-alist-1)
 				  (prettify-symbols-mode)))
+(add-hook 'emacs-lisp-mode-hook 'code-mode)
 
 (provide 'site-init)
