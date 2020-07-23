@@ -1,0 +1,29 @@
+* Emacs
+
+This is an experimental setup for mixing *Nix* with *Emacs*. It does not depend
+on *NixOS*, but rather uses the ~site-lisp~ mechanism to bootstrap the configuration.
+This is because my typical usage means that I don't much around with the configuration
+once it has been setup.
+
+The code contained in this repository is licensed under [[https://www.gnu.org/licenses/gpl-3.0.en.html][GNU General Public License]].
+
+** Quickstart
+
+The ~site-init.el~ and ~site-packages.el~ are bootstrap mechanisms because the emacs
+created by nix looks for anything under ~share/site/elisp~ in ~NIX_PROFILES~. We
+make use of that fact to have a minimal ~init.el~.
+
+#+BEGIN_SRC emacs-lisp
+
+;; -*- lexical-binding: t; -*-
+
+(require 'site-packages)
+(require 'site-init)
+
+#+END_SRC
+
+** Global vs. local
+** Notes
+
+ - Always use direnv mode for per project command line tools (compilers, build tools,
+   etc...). Most frustrating are tools like ~agda.el~
