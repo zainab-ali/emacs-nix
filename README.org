@@ -17,8 +17,10 @@ make use of that fact to have a minimal ~init.el~.
 
 ;; -*- lexical-binding: t; -*-
 
+(setq gc-cons-threshold (* 50 1000 1000))
 (require 'site-packages)
-(require 'site-init)
+(evil-mode)
+(setq gc-cons-threshold (* 2 1000 1000))
 
 #+END_SRC
 

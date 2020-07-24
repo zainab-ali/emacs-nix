@@ -12,7 +12,7 @@ let
   site = with pkgs;
     stdenv.mkDerivation {
       name = "emacs-site";
-      src = ./src;
+      src = lib.cleanSource ./src;
       buildInputs = [ emacs ];
       buildPhase = ''
         emacs --batch --eval "(byte-recompile-directory \"$(pwd)\" 0)"
