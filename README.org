@@ -7,7 +7,7 @@ once it has been setup.
 
 The code contained in this repository is licensed under [[https://www.gnu.org/licenses/gpl-3.0.en.html][GNU General Public License]].
 
-** Quickstart
+* Quickstart
 
 The ~site-init.el~ and ~site-packages.el~ are bootstrap mechanisms because the emacs
 created by nix looks for anything under ~share/site/elisp~ in ~NIX_PROFILES~. We
@@ -23,6 +23,20 @@ make use of that fact to have a minimal ~init.el~.
 (setq gc-cons-threshold (* 2 1000 1000))
 
 #+END_SRC
+
+* Addendum
+
+** Fonts
+
+Fonts cause problems because they need to be installed under specific directories
+if we are not using NixOS. Font config looks under ~$HOME/.local/share/fonts~ for
+any fonts we might want.
+
+This is slightly unfortunate, but we can still bundle the fonts that we want
+available using Nix by creating symlinks between the nix store font and the font that
+we care about.
+
+** Direnv
 
 ** Global vs. local
 ** Notes
