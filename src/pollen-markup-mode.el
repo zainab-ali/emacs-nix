@@ -1,4 +1,4 @@
-;; -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t; -*-
 
 (require 'rx)
 (require 'project)
@@ -55,6 +55,10 @@
 	   ?\"))
       (match-string 1))))
 
+(defvar pollen-server-port
+  8080
+  "Port for Pollen server")
+
 (cl-defun pollen-start-server ()
   "Start a Pollen project server in the current project."
   (interactive)
@@ -63,7 +67,8 @@
 	(car (project-roots
 	      (project-current))))
        (*buffer* (get-buffer-create "*pollen*"))
-       (default-directory (concat project-root (pollen--info-name))))
-    (start-process "Pollen" *buffer* "raco" "pollen" "start")))
+       (default-directory project-root))
+    (start-process
+     "Pollen" *buffer* "raco" "pollen" "start" (pollen--info-name) (number-to-string pollen-server-port))))
 
 (provide 'pollen-markup-mode)

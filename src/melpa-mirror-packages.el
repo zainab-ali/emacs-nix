@@ -17,7 +17,8 @@
   :commands
   evil-collection-dired-setup
   evil-collection-eshell-setup
-  evil-collection-magit-setup)
+  evil-collection-magit-setup
+  evil-collection-buff-menu-setup)
 
 (use-package ivy
   :diminish ivy-mode
@@ -37,16 +38,11 @@
    ("C-h v" . 'counsel-describe-variable)
    ("C-h l" . 'counsel-find-library)
    ("M-i" . 'counsel-imenu)
-   ("M-x" . 'counsel-M-x)))
+   ("M-x" . 'counsel-M-x)
+   ("C-x b" . 'counsel-switch-buffer)))
 
 (use-package swiper
   :after ivy)
-
-(use-package projectile
-  :after ivy
-  :init (setq projectile-completion-system 'ivy)
-  :bind-keymap
-  ("C-c p" . projectile-command-map))
 
 (use-package magit
     :bind (("C-c g s" . magit-status)
@@ -83,6 +79,10 @@ and `line-end-position'."
 (with-eval-after-load 'dired
   (progn
     (evil-collection-dired-setup)))
+
+(with-eval-after-load 'buff-menu
+  (progn
+    (evil-collection-buff-menu)))
 
 (use-package nix-mode
   :commands nix-repl
