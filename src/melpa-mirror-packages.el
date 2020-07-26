@@ -6,7 +6,8 @@
 (require 'use-package)
 
 (use-package evil
-  :commands evil-define-minor-key evil-insert evil-delay evil-define-key
+  :commands
+  (evil-define-minor-key evil-insert evil-delay evil-define-key)
   :init (setq
 	 evil-want-C-u-scroll t
 	 evil-want-integration t
@@ -15,10 +16,10 @@
 (use-package evil-collection
   :after evil
   :commands
-  evil-collection-dired-setup
-  evil-collection-eshell-setup
-  evil-collection-magit-setup
-  evil-collection-buff-menu-setup)
+  (evil-collection-dired-setup
+   evil-collection-eshell-setup
+   evil-collection-magit-setup
+   evil-collection-buff-menu-setup))
 
 (use-package ivy
   :diminish ivy-mode
@@ -84,8 +85,21 @@ and `line-end-position'."
   (progn
     (evil-collection-buff-menu)))
 
+;; Needed for nix mode
+(use-package irony)
+
+(use-package ffap
+  :defines ffap-c-path)
+
+(use-package woman
+  :defines woman-manpath)
+
+(use-package nix-shell
+  :commands (nix-eshell nix-eshell-with-packages))
+
 (use-package nix-mode
-  :commands nix-repl
+  :after nix-shell
+  :commands (nix-repl nix-shell)
   :mode "\\.nix\\'")
 
 (use-package racket-mode
