@@ -13,11 +13,14 @@
        (2 font-lock-keyword-face nil t)
        (3 font-lock-variable-name-face nil t))
       (,(rx (group (group "◊")
-		   (group (1+ word))
-		   (group "{")))
+		   (group (1+ (or word (syntax symbol))))
+		   (group "{")
+		   (group (1+ (not (any ?{ ?◊ ?}))))))
        (2 font-lock-keyword-face nil t)
        (3 font-lock-variable-name-face nil t)
-       )
+       (5 font-lock-string-face nil t))
+      (,(rx (group (1+ word)))
+       (1 font-lock-string-face nil t))
       ))
   "Pollen mode keywords")
 
@@ -31,6 +34,7 @@
       ((table (make-syntax-table text-mode-syntax-table)))
     (modify-syntax-entry ?{ "(}")
     (modify-syntax-entry ?} "){")
+    (modify-syntax-entry ?- "_")
     table)
   :after-hook
   (font-lock-ensure))
@@ -70,5 +74,23 @@
        (default-directory project-root))
     (start-process
      "Pollen" *buffer* "raco" "pollen" "start" (pollen--info-name) (number-to-string pollen-server-port))))
+
+(cl-defun pollen-browse ()
+  "Open a page to the active pollen server"
+  (interactive)
+  (let*
+      ((project-root
+	(car (project-roots
+	      (project-current))))
+       (document (file-relative-name
+		  buffer-file-name
+		  (concat project-root (pollen--info-name)))))
+    (browse-url
+     (concat
+      "localhost:"
+      (number-to-string pollen-server-port)
+      "/"
+      ;;TODO: regex match
+      (substring document 0 (- (length document) 3))))))
 
 (provide 'pollen-markup-mode)

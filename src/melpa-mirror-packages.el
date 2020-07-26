@@ -19,7 +19,8 @@
   (evil-collection-dired-setup
    evil-collection-eshell-setup
    evil-collection-magit-setup
-   evil-collection-buff-menu-setup))
+   evil-collection-buff-menu-setup
+   evil-collection-proced-setup))
 
 (use-package ivy
   :diminish ivy-mode
@@ -83,7 +84,11 @@ and `line-end-position'."
 
 (with-eval-after-load 'buff-menu
   (progn
-    (evil-collection-buff-menu)))
+    (evil-collection-buff-menu-setup)))
+
+(with-eval-after-load 'proced
+  (progn
+    (evil-collection-proced-setup)))
 
 ;; Needed for nix mode
 (use-package irony)
@@ -118,6 +123,13 @@ and `line-end-position'."
   :hook
   (emacs-lisp-mode . lispyville-mode)
   (racket-mode . lispyville-mode))
+
+(use-package avy
+  :commands
+  avy-goto-char avy-goto-char2
+  :bind
+  ("C-:" . avy-goto-char)
+  ("C-'" . avy-goto-char-2))
 
 ;; https://github.com/nix-community/emacs-overlay
 

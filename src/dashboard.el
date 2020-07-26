@@ -24,6 +24,7 @@
   (interactive)
   (with-current-buffer
       (get-buffer-create "*dashboard*")
+    (setq buffer-read-only t)
     (let ((inhibit-read-only t))
       (erase-buffer))
     (dashboard--widget-projects)
