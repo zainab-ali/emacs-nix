@@ -15,7 +15,7 @@ let
       src = lib.cleanSource ./src;
       buildInputs = [ emacs ];
       buildPhase = ''
-        emacs --batch --eval "(byte-recompile-file \"$(pwd)/melpa-mirror-packages.el\" 0)"
+        emacs --batch --eval "(byte-recompile-file \"$(pwd)/melpa-mirror-packages.el\" t)"
       '';
       installPhase = ''
         mkdir -p $out/share/emacs/site-lisp
