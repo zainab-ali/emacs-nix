@@ -26,6 +26,22 @@
 
 (font-lock-add-keywords 'pollen-markup-mode pollen-font-lock-keywords)
 
+(require 'skeleton)
+
+(define-skeleton pollen-skeleton-command
+  "Pollen command"
+  "Tag: "
+  "◊" str "{" _ "}")
+
+(cl-defun pollen-abbrev-tag (tag)
+  "Create an abbrev entry for TAG."
+  `(,tag "" (lambda () (pollen-skeleton-command ,tag))))
+
+(define-abbrev-table 'pollen-markup-mode-abbrev-table
+  `(,(pollen-abbrev-tag "p")
+    ,(pollen-abbrev-tag "em")
+    ,(pollen-abbrev-tag "pre")))
+
 ;;;###autoload
 (define-derived-mode pollen-markup-mode text-mode "Pollen markup"
   "Major mode for editing pollen markup."
@@ -36,6 +52,8 @@
     (modify-syntax-entry ?} "){")
     (modify-syntax-entry ?- "_")
     table)
+  :abbrev-table
+  pollen-markup-mode-abbrev-table
   :after-hook
   (font-lock-ensure))
 
@@ -74,6 +92,7 @@
        (default-directory project-root))
     (start-process
      "Pollen" *buffer* "raco" "pollen" "start" (pollen--info-name) (number-to-string pollen-server-port))))
+
 
 (cl-defun pollen-browse ()
   "Open a page to the active pollen server"

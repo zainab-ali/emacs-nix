@@ -39,6 +39,7 @@
    ("C-h f" . 'counsel-describe-function)
    ("C-h v" . 'counsel-describe-variable)
    ("C-h l" . 'counsel-find-library)
+   ("C-x d" . 'counsel-dired)
    ("M-i" . 'counsel-imenu)
    ("M-x" . 'counsel-M-x)
    ("C-x b" . 'counsel-switch-buffer)))
@@ -125,12 +126,25 @@ and `line-end-position'."
   (racket-mode . lispyville-mode))
 
 (use-package avy
-  :commands
-  avy-goto-char avy-goto-char2
   :bind
   ("C-:" . avy-goto-char)
   ("C-'" . avy-goto-char-2))
 
-;; https://github.com/nix-community/emacs-overlay
+(use-package org-agenda
+  :bind
+  (("C-c o a" . org-agenda)
+   :map org-agenda-mode-map
+   ("j" . org-agenda-previous-line)
+   ("k" . org-agenda-next-line)))
+
+(use-package org
+  :bind
+  ("C-c o l" . org-store-link)
+  ("C-c o t" . org-clock-goto)
+
+  :config
+  (setq org-todo-keywords
+	'((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
+	  (sequence "CANCELED"))))
 
 (provide 'melpa-mirror-packages)
