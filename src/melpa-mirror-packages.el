@@ -225,4 +225,9 @@ and `line-end-position'."
     (setq mu4e-completing-read-function 'ivy-completing-read)
     (setq mail-user-agent 'mu4e-user-agent)))
 
+(use-package moe-theme
+  :config
+  (load-theme 'moe-light t)
+  )
+
 (provide 'melpa-mirror-packages)
