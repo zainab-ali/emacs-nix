@@ -68,7 +68,7 @@
   :after ivy)
 
 (use-package magit
-    :bind (("C-c g s" . magit-status)
+    :bind (("s-g" . magit-status)
            ("C-c g b" . magit-blame))
     :config
     (evil-collection-magit-setup))
