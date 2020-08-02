@@ -111,7 +111,10 @@ and `line-end-position'."
 
 (use-package dired
   :config
-  (evil-collection-dired-setup))
+  (evil-collection-dired-setup)
+  ;; Lets us copy from one open dired buffer to another
+  (setq dired-dwim-target t)
+  )
 
 ;; since buff-menu doesn't provide anything
 (eval-after-load 'buff-menu
