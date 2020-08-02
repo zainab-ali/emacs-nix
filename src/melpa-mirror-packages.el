@@ -35,6 +35,10 @@
    evil-collection-buff-menu-setup
    evil-collection-proced-setup))
 
+(use-package
+  evil-surround
+  :config (global-evil-surround-mode t))
+
 (use-package ivy
   :diminish ivy-mode
   :commands (ivy-completing-read)
