@@ -35,12 +35,14 @@
 
 (cl-defun pollen-abbrev-tag (tag)
   "Create an abbrev entry for TAG."
-  `(,tag "" (lambda () (pollen-skeleton-command ,tag))))
+  `(,(concat "pc" tag) "" (lambda () (pollen-skeleton-command ,tag))))
 
 (define-abbrev-table 'pollen-markup-mode-abbrev-table
-  `(,(pollen-abbrev-tag "p")
+  `(("pcsc" "" pollen-skeleton-command)
+    ,(pollen-abbrev-tag "p")
     ,(pollen-abbrev-tag "em")
-    ,(pollen-abbrev-tag "pre")))
+    ,(pollen-abbrev-tag "pre")
+    ,(pollen-abbrev-tag "code")))
 
 ;;;###autoload
 (define-derived-mode pollen-markup-mode text-mode "Pollen markup"

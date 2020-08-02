@@ -1,11 +1,17 @@
-;;; -*- lexical-binding: t; -*-
-(require 'use-package)
+;;; project+.el --- Additional support -*- lexical-binding: t; -*-
+;; Package-Requires: (widget project+)
+;;; Code:
 
-(use-package widget
-  :functions (widget-create widget-insert))
+(require 'widget)
+(require 'project+)
 
-(use-package project+
-  :functions (project+-known-projects project+-switch-project))
+;; (require 'use-package)
+
+;; (use-package widget
+;;   :functions (widget-create widget-insert))
+
+;; (use-package project+
+;;   :functions (project+-known-projects project+-switch-project))
 
 (cl-defun dashboard--widget-projects ()
   "Create a widget for the projects."

@@ -1,9 +1,18 @@
-;;; melpa-mirror-packages.el --- Entry point
 ;;; -*- lexical-binding: t; -*-
+;;; melpa-mirror-packages.el --- Entry point
 ;;; Commentary:
 ;;; Code:
 
 (require 'use-package)
+
+(setq use-package-verbose t)
+
+(use-package diminish
+  :commands (diminish))
+
+(use-package undo-tree
+  :diminish (undo-tree-mode)
+  :commands (undo-tree))
 
 (use-package evil
   :commands
@@ -24,12 +33,15 @@
 
 (use-package ivy
   :diminish ivy-mode
+  :commands (ivy-completing-read)
   :config
   (setq ivy-use-virtual-buffers t)
   (setq enable-recursive-minibuffers t)
   (setq ivy-count-format "(%d/%d) ")
   :bind
-  ("C-c C-r" . 'ivy-resume))
+  ("C-c C-r" . 'ivy-resume)
+  :hook
+  ((magit-mode . ivy-mode)))
 
 (use-package counsel
   :after ivy
@@ -52,6 +64,9 @@
 	   ("C-c g b" . magit-blame))
     :config
     (evil-collection-magit-setup))
+
+(use-package evil-magit
+  :after (magit evil))
 
 (use-package direnv)
 
@@ -79,25 +94,28 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
 
-(with-eval-after-load 'dired
-  (progn
-    (evil-collection-dired-setup)))
+(use-package dired
+  :config
+  (evil-collection-dired-setup))
 
-(with-eval-after-load 'buff-menu
-  (progn
-    (evil-collection-buff-menu-setup)))
+;; since buff-menu doesn't provide anything 
+(eval-after-load 'buff-menu
+  (evil-collection-buff-menu-setup))
 
-(with-eval-after-load 'proced
-  (progn
-    (evil-collection-proced-setup)))
+(use-package proced
+  :config
+  (evil-collection-proced-setup))
 
 ;; Needed for nix mode
-(use-package irony)
+(use-package irony
+  :defer t)
 
 (use-package ffap
+  :commands (ffap)
   :defines ffap-c-path)
 
 (use-package woman
+  :commands (woman)
   :defines woman-manpath)
 
 (use-package nix-shell
@@ -109,6 +127,7 @@ and `line-end-position'."
   :mode "\\.nix\\'")
 
 (use-package racket-mode
+  :interpreter "racket"
   :commands racket-run
   :mode "\\.rkt\\'")
 
@@ -122,8 +141,8 @@ and `line-end-position'."
 	     atom-motions
 	     slurp/barf-lispy))
   :hook
-  (emacs-lisp-mode . lispyville-mode)
-  (racket-mode . lispyville-mode))
+  ((emacs-lisp-mode . lispyville-mode)
+   (racket-mode . lispyville-mode)))
 
 (use-package avy
   :bind
@@ -137,6 +156,10 @@ and `line-end-position'."
    ("j" . org-agenda-previous-line)
    ("k" . org-agenda-next-line)))
 
+;; (use-package undo-tree
+;;   :diminish undo-tree-mode
+;;   :commands (undo-tree-mode))
+
 (use-package org
   :bind
   ("C-c o l" . org-store-link)
@@ -146,5 +169,56 @@ and `line-end-position'."
   (setq org-todo-keywords
 	'((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
 	  (sequence "CANCELED"))))
+
+(defun company--set-mode-backends (mode-hook backends)
+  "Set company BACKENDS for MODE-HOOK."
+  (let
+      ((cb (lambda ()
+	     (setq-local company-backends backends))))
+    (add-hook mode-hook cb)))
+
+(use-package python
+  :mode ("\\.py\\'" . python-mode)
+  :interpreter ("python" . python-mode)
+  :config
+  (add-hook 'python-mode-hook 'code-mode))
+
+(use-package anaconda-mode
+  :hook python-mode
+  :commands (anaconda-mode-find-definitions)
+  :config
+  (evil-define-key 'normal anaconda-mode-map
+    (kbd "gd") 'anaconda-mode-find-definitions))
+
+(use-package company-anaconda
+  :commands (company-anaconda)
+  :after (anaconda-mode company-mode))
+
+(use-package scala-mode
+  :mode "\\.scala\\'"
+  :config
+  (add-hook 'scala-mode-hook 'code-mode))
+
+(use-package company
+  :diminish company-mode
+  :bind
+  ((:map code-mode-map
+	 ("C-M-i" . company-complete)))
+  :init
+  (progn
+    (company--set-mode-backends 'emacs-lisp-mode-hook '(company-capf company-files))
+    (company--set-mode-backends 'anaconda-mode-hook '(company-anaconda)))
+  :hook
+  ((emacs-lisp-mode . company-mode)
+   (anaconda-mode . company-mode)))
+
+;;TODO: get this building better
+(use-package mu4e
+  :commands (mu4e)
+  :config
+  (progn
+    (evil-collection-mu4e-setup)
+    (setq mu4e-completing-read-function 'ivy-completing-read)
+    (setq mail-user-agent 'mu4e-user-agent)))
 
 (provide 'melpa-mirror-packages)

@@ -1,6 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
 
-(require 'project)
 (require 'ivy)
 
 (cl-defun project+-known-projects ()
