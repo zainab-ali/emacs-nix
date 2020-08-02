@@ -18,9 +18,9 @@
   :commands
   (evil-define-minor-key evil-insert evil-delay evil-define-key)
   :init (setq
-	 evil-want-C-u-scroll t
-	 evil-want-integration t
-	 evil-want-keybinding nil))
+         evil-want-C-u-scroll t
+         evil-want-integration t
+         evil-want-keybinding nil))
 
 (use-package evil-collection
   :after evil
@@ -61,7 +61,7 @@
 
 (use-package magit
     :bind (("C-c g s" . magit-status)
-	   ("C-c g b" . magit-blame))
+           ("C-c g b" . magit-blame))
     :config
     (evil-collection-magit-setup))
 
@@ -72,7 +72,7 @@
 
 ;;; Helper functions
 (defun comment-or-uncomment-line ()
-  "Call `comment-or-uncomment-region' with `line-beginning-position' 
+  "Call `comment-or-uncomment-region' with `line-beginning-position'
 and `line-end-position'."
   (interactive)
   (comment-or-uncomment-region
@@ -98,7 +98,7 @@ and `line-end-position'."
   :config
   (evil-collection-dired-setup))
 
-;; since buff-menu doesn't provide anything 
+;; since buff-menu doesn't provide anything
 (eval-after-load 'buff-menu
   (evil-collection-buff-menu-setup))
 
@@ -135,11 +135,11 @@ and `line-end-position'."
   :diminish lispyville-mode
   :commands lispyville-set-key-theme
   :config (lispyville-set-key-theme
-	   '(operators
-	     c-w
-	     text-objects
-	     atom-motions
-	     slurp/barf-lispy))
+           '(operators
+             c-w
+             text-objects
+             atom-motions
+             slurp/barf-lispy))
   :hook
   ((emacs-lisp-mode . lispyville-mode)
    (racket-mode . lispyville-mode)))
@@ -167,14 +167,14 @@ and `line-end-position'."
 
   :config
   (setq org-todo-keywords
-	'((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
-	  (sequence "CANCELED"))))
+        '((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
+          (sequence "CANCELED"))))
 
 (defun company--set-mode-backends (mode-hook backends)
   "Set company BACKENDS for MODE-HOOK."
   (let
       ((cb (lambda ()
-	     (setq-local company-backends backends))))
+             (setq-local company-backends backends))))
     (add-hook mode-hook cb)))
 
 (use-package python
@@ -203,7 +203,7 @@ and `line-end-position'."
   :diminish company-mode
   :bind
   ((:map code-mode-map
-	 ("C-M-i" . company-complete)))
+         ("C-M-i" . company-complete)))
   :init
   (progn
     (company--set-mode-backends 'emacs-lisp-mode-hook '(company-capf company-files))
