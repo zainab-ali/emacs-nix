@@ -86,11 +86,18 @@ and `line-end-position'."
   (comment-or-uncomment-region
    (line-beginning-position) (line-end-position)))
 
+(use-package column-enforce-mode
+  :config
+  (setq column-enforce-column 80)
+  )
+
 (define-minor-mode code-mode
   "Common bindings for coding.
 \\{code-mode-map}"
   :keymap (make-sparse-keymap)
-  (display-line-numbers-mode))
+  (display-line-numbers-mode)
+  (column-enforce-mode)
+  )
 
 (evil-define-key 'normal code-mode-map
   (kbd "C-c c c") 'comment-or-uncomment-line)
