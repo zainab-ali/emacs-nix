@@ -1,6 +1,10 @@
 ;;; -*- lexical-binding: t; -*-
 ;;; melpa-mirror-packages.el --- Entry point
 ;;; Commentary:
+;;;   A listing of packages for nix to download
+;;;
+;;;   In a conventional emacs setup, use-package will download dependencies on
+;;;   startup. This mechanism downloads dependencies on nix install instead.
 ;;; Code:
 
 (require 'use-package)

@@ -2,22 +2,35 @@
 
 This is an experimental setup for mixing *Nix* with *Emacs*. It does not depend
 on *NixOS*, but rather uses the ~site-lisp~ mechanism to bootstrap the configuration.
-This is because my typical usage means that I don't much around with the configuration
+This is because my typical usage means that I don't muck around with the configuration
 once it has been setup.
 
 The code contained in this repository is licensed under [[https://www.gnu.org/licenses/gpl-3.0.en.html][GNU General Public License]].
 
 * Quickstart
 
+** Download
+
+Run the following command on every time this code is modified.
+
+#+begin_src sh
+nix-env -i -f default.nix
+#+end_src
+
+** Initialize
+
 The ~site-init.el~ and ~site-packages.el~ are bootstrap mechanisms because the emacs
 created by nix looks for anything under ~share/site/elisp~ in ~NIX_PROFILES~. We
 make use of that fact to have a minimal ~init.el~.
+
+Add the following to the ~init.el~:
 
 #+BEGIN_SRC emacs-lisp
 
 ;; -*- lexical-binding: t; -*-
 
 (setq gc-cons-threshold (* 50 1000 1000))
+(require 'melpa-mirror-packages)
 (require 'site-packages)
 (evil-mode)
 (setq gc-cons-threshold (* 2 1000 1000))
@@ -35,6 +48,24 @@ any fonts we might want.
 This is slightly unfortunate, but we can still bundle the fonts that we want
 available using Nix by creating symlinks between the nix store font and the font that
 we care about.
+
+*** Installation
+
+See [[Https://nixos.wiki/wiki/Fonts][imperative installation of user fonts, NixOs Wiki]].
+
+For example, to install ~FiraCode~:
+
+
+#+begin_src sh
+  # Download the font
+  font=$(nix-build --no-out-link '<nixpkgs>' -A fira-code)/share/fonts/truetype/*
+  # Copy and pase the directory
+  mkdir ~/.local/share/fonts
+  cp $font ~/.local/share/fonts
+  fc-cache
+  # Verify that the font has been installed
+  fc-list -v | grep -i fira
+#+end_src
 
 ** Direnv
 
