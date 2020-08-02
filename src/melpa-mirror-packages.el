@@ -116,6 +116,13 @@ and `line-end-position'."
   (setq dired-dwim-target t)
   )
 
+(use-package dired-x
+  :after dired
+  :init
+  ;; Hide ignored files
+  (setq dired-omit-mode t)
+  )
+
 ;; since buff-menu doesn't provide anything
 (eval-after-load 'buff-menu
   (evil-collection-buff-menu-setup))
