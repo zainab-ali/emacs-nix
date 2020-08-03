@@ -189,11 +189,26 @@ and `line-end-position'."
   :bind
   ("C-c o l" . org-store-link)
   ("C-c o t" . org-clock-goto)
+  :init
 
   :config
+  ;; TODO: Debug why "font-lock-function-name-face" cannot be used to set
+  ;; levels
+  (set-face-attribute 'org-level-1 nil :weight 'semi-bold)
+  (set-face-attribute 'org-level-2 nil :weight 'semi-bold)
+  (set-face-attribute 'org-level-3 nil :weight 'semi-bold)
+  (set-face-attribute 'org-level-4 nil :weight 'semi-bold)
+  ;; TODO: Why can "org-meta-line" not be used?
+  (set-face-attribute 'org-block nil :family "FiraCode")
+
   (setq org-todo-keywords
         '((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
-          (sequence "CANCELED"))))
+          (sequence "CANCELED")))
+
+  ;; Enforce a line length of 80
+  (setq fill-column 80)
+  (add-hook 'org-mode-hook 'auto-fill-mode)
+  )
 
 (defun company--set-mode-backends (mode-hook backends)
   "Set company BACKENDS for MODE-HOOK."
