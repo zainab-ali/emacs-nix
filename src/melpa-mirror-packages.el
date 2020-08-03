@@ -154,7 +154,28 @@ and `line-end-position'."
 (use-package racket-mode
   :interpreter "racket"
   :commands racket-run
-  :mode "\\.rkt\\'")
+  :mode "\\.rkt\\'"
+  :config
+  (add-hook 'racket-mode-hook 'rainbow-delimiters-mode)
+  (add-hook 'racket-mode-hook 'code-mode)
+  )
+
+(use-package rainbow-delimiters
+  :config
+  (add-hook
+   'rainbow-delimiters-mode-hook
+   (lambda ()
+     (set-face-attribute 'rainbow-delimiters-depth-1-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-2-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-3-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-4-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-5-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-6-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-7-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-8-face nil :weight 'semi-bold)
+     (set-face-attribute 'rainbow-delimiters-depth-9-face nil :weight 'semi-bold)
+     ))
+  )
 
 (use-package lispyville
   :diminish lispyville-mode
