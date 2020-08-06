@@ -265,6 +265,10 @@ and `line-end-position'."
   :config
   (add-hook 'scala-mode-hook 'code-mode))
 
+(use-package haskell-mode
+  (add-hook 'haskell-mode-hook 'code-mode)
+  )
+
 (use-package company
   :diminish company-mode
   :bind
