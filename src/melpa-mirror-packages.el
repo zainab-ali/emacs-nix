@@ -215,8 +215,6 @@ and `line-end-position'."
   :bind
   ("C-c o l" . org-store-link)
   ("C-c o t" . org-clock-goto)
-  :init
-
   :config
   ;; TODO: Debug why "font-lock-function-name-face" cannot be used to set
   ;; levels
@@ -224,8 +222,8 @@ and `line-end-position'."
   (set-face-attribute 'org-level-2 nil :weight 'semi-bold)
   (set-face-attribute 'org-level-3 nil :weight 'semi-bold)
   (set-face-attribute 'org-level-4 nil :weight 'semi-bold)
-  ;; TODO: Why can "org-meta-line" not be used?
-  (set-face-attribute 'org-block nil :family "FiraCode")
+  ;; ;; TODO: Why can "org-meta-line" not be used?
+  (set-face-attribute 'org-block nil :family "FiraCode" :height 220)
 
   (setq org-todo-keywords
         '((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
