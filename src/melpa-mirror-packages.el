@@ -158,6 +158,11 @@ and `line-end-position'."
   :config
   (add-hook 'racket-mode-hook 'rainbow-delimiters-mode)
   (add-hook 'racket-mode-hook 'code-mode)
+
+  (evil-define-key 'normal racket-mode-map
+    (kbd "C-c C-c b") 'racket-run)
+  (evil-define-key 'visual racket-mode-map
+    (kbd "C-c C-c b") 'racket-run)
   )
 
 (use-package rainbow-delimiters
