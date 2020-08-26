@@ -216,6 +216,8 @@ and `line-end-position'."
 ;;   :diminish undo-tree-mode
 ;;   :commands (undo-tree-mode))
 
+(use-package ob-http)
+
 (use-package org
   :bind
   ("C-c o l" . org-store-link)
