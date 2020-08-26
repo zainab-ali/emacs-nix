@@ -301,4 +301,5 @@ and `line-end-position'."
   (load-theme 'moe-light t)
   )
 
+(use-package yaml-mode)
 (provide 'melpa-mirror-packages)
