@@ -194,6 +194,7 @@ and `line-end-position'."
              c-w
              text-objects
              atom-motions
+	     additional-movement
              slurp/barf-lispy))
   :hook
   ((emacs-lisp-mode . lispyville-mode)
