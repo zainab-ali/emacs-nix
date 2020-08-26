@@ -96,6 +96,7 @@ and `line-end-position'."
 \\{code-mode-map}"
   :keymap (make-sparse-keymap)
   (display-line-numbers-mode)
+  (setq-local display-line-numbers 'relative)
   (column-enforce-mode)
   )
 
