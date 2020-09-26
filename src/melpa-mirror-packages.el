@@ -48,6 +48,7 @@
   (setq ivy-count-format "(%d/%d) ")
   :bind
   ("C-c C-r" . 'ivy-resume)
+  ("C-c v" . 'ivy-switch-view)
   :hook
   ((magit-mode . ivy-mode)))
 
@@ -109,6 +110,9 @@ and `line-end-position'."
 ;;; Customize emacs-lisp
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
+
+
+(add-hook 'css-mode-hook 'code-mode)
 
 (use-package dired
   :config
@@ -202,7 +206,7 @@ and `line-end-position'."
 
 (use-package avy
   :bind
-  ("C-:" . avy-goto-char)
+  ("C-;" . avy-goto-char)
   ("C-'" . avy-goto-char-2))
 
 (use-package org-agenda
@@ -231,6 +235,7 @@ and `line-end-position'."
   (set-face-attribute 'org-level-4 nil :weight 'semi-bold)
   ;; ;; TODO: Why can "org-meta-line" not be used?
   (set-face-attribute 'org-block nil :family "FiraCode" :height 220)
+  (set-face-attribute 'org-table nil :family "FiraCode" :height 220)
 
   (setq org-todo-keywords
         '((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
@@ -238,8 +243,17 @@ and `line-end-position'."
 
   ;; Enforce a line length of 80
   (setq fill-column 80)
-  (add-hook 'org-mode-hook 'auto-fill-mode)
-  )
+  ;; (add-hook 'org-mode-hook 'auto-fill-mode)
+  (add-hook 'org-mode-hook
+	    (lambda()
+	      (buffer-face-set '(:family "Source Serif Pro" :height 280))
+	       ))
+  (setq org-confirm-babel-evaluate nil)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((http . t)
+     (sql . t)
+     (shell . t))))
 
 (defun company--set-mode-backends (mode-hook backends)
   "Set company BACKENDS for MODE-HOOK."
@@ -265,10 +279,37 @@ and `line-end-position'."
   :commands (company-anaconda)
   :after (anaconda-mode company-mode))
 
+
+;; (add-to-list 'auto-mode-alist '("\\.\\(scala\\|sbt\\|sc\\)\\'" . scala-mode))
 (use-package scala-mode
-  :mode "\\.scala\\'"
+  :mode "\\.\\(scala\\|sbt\\|sc\\)\\'"
+  ;; :mode "\\.\\(scala\\||sc\\)\\'"
   :config
-  (add-hook 'scala-mode-hook 'code-mode))
+  (add-hook 'scala-mode-hook 'code-mode)
+  (evil-define-key 'normal scala-mode-map
+    (kbd "C-c c b") 'bloop-compile
+    (kbd "g d") 'xref-find-definitions
+    (kbd "g r") 'xref-find-references
+    )
+  )
+
+(use-package lsp-mode
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  :init (setq lsp-keymap-prefix "C-c l")
+  :hook
+  (scala-mode . lsp)
+  (lsp-mode . lsp-lens-mode)
+  :commands lsp
+  :config
+  (add-hook 'lsp-mode-hook
+	    (lambda () (setq after-change-functions nil)))
+  )
+
+(use-package lsp-ui)
+
+(use-package lsp-metals)
+
+(use-package groovy-mode)
 
 (use-package haskell-mode
   (add-hook 'haskell-mode-hook 'code-mode)
