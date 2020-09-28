@@ -36,8 +36,7 @@ let
         export FONTCONFIG_FILE=${fontconfig.out}/etc/fonts/fonts.conf
         ${emacs.out}/bin/emacs
       '';
-in {
-  inherit site;
-  inherit emacs;
-  inherit run-emacs;
+in pkgs.symlinkJoin {
+  name = "emacs-site-lisp";
+  paths = [ emacs site ];
 }
