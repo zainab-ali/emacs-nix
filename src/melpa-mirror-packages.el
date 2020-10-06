@@ -343,4 +343,7 @@ and `line-end-position'."
   )
 
 (use-package yaml-mode)
+
+(use-package sudo-edit)
+
 (provide 'melpa-mirror-packages)
