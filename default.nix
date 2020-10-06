@@ -29,13 +29,6 @@ let
       config = builtins.readFile ./src/melpa-mirror-packages.el;
       alwaysEnsure = true;
     };
-  run-emacs = with pkgs;
-    writeScriptBin "run-emacs"
-      ''
-        #!${stdenv.shell}
-        export FONTCONFIG_FILE=${fontconfig.out}/etc/fonts/fonts.conf
-        ${emacs.out}/bin/emacs
-      '';
 in pkgs.symlinkJoin {
   name = "emacs-site-lisp";
   paths = [ emacs site ];
