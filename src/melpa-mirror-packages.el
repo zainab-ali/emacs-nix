@@ -234,8 +234,8 @@ and `line-end-position'."
   (set-face-attribute 'org-level-3 nil :weight 'semi-bold)
   (set-face-attribute 'org-level-4 nil :weight 'semi-bold)
   ;; ;; TODO: Why can "org-meta-line" not be used?
-  (set-face-attribute 'org-block nil :family "FiraCode" :height 220)
-  (set-face-attribute 'org-table nil :family "FiraCode" :height 220)
+  (set-face-attribute 'org-block nil :family "Source Code Pro" :height 220)
+  (set-face-attribute 'org-table nil :family "Source Code Pro" :height 220)
 
   (setq org-todo-keywords
         '((sequence "TODO" "FEEDBACK" "|" "DONE" "DELEGATED")
