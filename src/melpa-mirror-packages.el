@@ -108,6 +108,7 @@ and `line-end-position'."
   (kbd "C-c c c") 'comment-or-uncomment-region)
 
 ;;; Customize emacs-lisp
+(add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode)
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
 
