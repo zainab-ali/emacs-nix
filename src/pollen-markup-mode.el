@@ -33,16 +33,43 @@
   "Tag: "
   "◊" str "{" _ "}")
 
-(cl-defun pollen-abbrev-tag (tag)
-  "Create an abbrev entry for TAG."
-  `(,(concat "pc" tag) "" (lambda () (pollen-skeleton-command ,tag))))
+(defmacro pollen-skeleton-tag (tag)
+  `(progn
+   (defun ,(intern (concat "pollen-skeleton-command-" tag)) ()
+      (pollen-skeleton-command ,tag)
+      )
+   (put (quote ,(intern (concat "pollen-skeleton-command-" tag)))  'no-self-insert t)
+   )
+  )
+
+(pollen-skeleton-tag "p")
+(pollen-skeleton-tag "headline2")
+(pollen-skeleton-tag "note")
+(pollen-skeleton-tag "keyword")
+(pollen-skeleton-tag "definition")
+(pollen-skeleton-tag "buffer")
+(pollen-skeleton-tag "command")
+(pollen-skeleton-tag "code-inline")
+(pollen-skeleton-tag "function")
+(pollen-skeleton-tag "key")
+(pollen-skeleton-tag "keybinding")
 
 (define-abbrev-table 'pollen-markup-mode-abbrev-table
-  `(("pcsc" "" pollen-skeleton-command)
-    ,(pollen-abbrev-tag "p")
-    ,(pollen-abbrev-tag "em")
-    ,(pollen-abbrev-tag "pre")
-    ,(pollen-abbrev-tag "code")))
+  '(("psc" "" pollen-skeleton-command)
+    ("pp" "" pollen-skeleton-command-p)
+    ("ph" "" pollen-skeleton-command-headline2)
+    ("pn" "" pollen-skeleton-command-note)
+    ("pk" "" pollen-skeleton-command-keyword)
+    ("pd" "" pollen-skeleton-command-definition)
+    ("pb" "" pollen-skeleton-command-buffer)
+    ("pc" "" pollen-skeleton-command-command)
+    ("pci" "" pollen-skeleton-command-code-inline)
+    ("pf" "" pollen-skeleton-command-function)
+    ("pky" "" pollen-skeleton-command-key)
+    ("pkb" "" pollen-skeleton-command-keybinding)
+    ))
+
+(defvar pollen-markup-mode-map (make-sparse-keymap))
 
 ;;;###autoload
 (define-derived-mode pollen-markup-mode text-mode "Pollen markup"
@@ -57,7 +84,8 @@
   :abbrev-table
   pollen-markup-mode-abbrev-table
   :after-hook
-  (font-lock-ensure))
+  (font-lock-ensure)
+  :keymap pollen-markup-mode-map)
 
 (cl-defun pollen--info-name ()
   "Extracts the name field out of info.rkt file"
