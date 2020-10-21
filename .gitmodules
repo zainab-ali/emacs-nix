@@ -1,0 +1,3 @@
+[submodule "pollen-mode"]
+	path = src/pollen-mode
+	url = git@github.com:zainab-ali/pollen-mode.git
