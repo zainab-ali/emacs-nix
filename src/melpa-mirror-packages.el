@@ -109,6 +109,7 @@ and `line-end-position'."
 
 ;;; Customize emacs-lisp
 (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode)
+(add-hook 'emacs-lisp-mode-hook 'show-paren-mode)
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
 
@@ -337,11 +338,6 @@ and `line-end-position'."
     (evil-collection-mu4e-setup)
     (setq mu4e-completing-read-function 'ivy-completing-read)
     (setq mail-user-agent 'mu4e-user-agent)))
-
-(use-package moe-theme
-  :config
-  (load-theme 'moe-light t)
-  )
 
 (use-package yaml-mode)
 
