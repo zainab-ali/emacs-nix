@@ -218,9 +218,9 @@ and `line-end-position'."
    ("j" . org-agenda-previous-line)
    ("k" . org-agenda-next-line)))
 
-;; (use-package undo-tree
-;;   :diminish undo-tree-mode
-;;   :commands (undo-tree-mode))
+(use-package undo-tree
+  :diminish undo-tree-mode
+  :commands (undo-tree-mode))
 
 (use-package ob-http)
 
