@@ -77,6 +77,9 @@
 (use-package evil-magit
   :after (magit evil))
 
+(use-package forge
+  :after magit)
+
 (use-package direnv)
 
 ;;; Helper functions
