@@ -17,6 +17,35 @@ Run the following command on every time this code is modified.
 nix-env -i -f default.nix
 #+end_src
 
+** Troubleshooting
+
+*** Run the nix repl
+    #+begin_example
+    M-x nix-repl
+    #+end_example
+
+    Import the expression (function) from ~defalt.nix~.
+#+begin_src  nix
+func = import ./default.nix
+#+end_src
+
+Call the function.
+#+begin_src
+result = func {}
+#+end_src
+This produces a lazy set.
+
+*Build* the derivation to evaluate the set.
+#+begin_src nix
+:b result
+#+end_src
+
+This should produce an output
+#+begin_example
+this derivation produced the following outputs:
+  out -> /nix/store/l20amhsjrhni6kaqi8w515nv7x2xcryc-emacs-site-lisp
+#+end_example
+
 ** Initialize
 
 The ~site-init.el~ and ~site-packages.el~ are bootstrap mechanisms because the emacs

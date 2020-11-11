@@ -154,7 +154,12 @@ and `line-end-position'."
   :defines woman-manpath)
 
 (use-package nix-shell
-  :commands (nix-eshell nix-eshell-with-packages))
+  :commands (nix-eshell nix-eshell-with-packages)
+  :config
+  (progn
+    (require 'woman)
+    (require 'irony))
+  )
 
 (use-package nix-mode
   :after nix-shell
@@ -291,12 +296,7 @@ and `line-end-position'."
   ;; :mode "\\.\\(scala\\||sc\\)\\'"
   :config
   (add-hook 'scala-mode-hook 'code-mode)
-  (evil-define-key 'normal scala-mode-map
-    (kbd "C-c c b") 'bloop-compile
-    (kbd "g d") 'xref-find-definitions
-    (kbd "g r") 'xref-find-references
-    )
-  )
+  (add-hook 'scala-mode-hook 'yas-minor-mode))
 
 (use-package lsp-mode
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
@@ -345,5 +345,7 @@ and `line-end-position'."
 (use-package yaml-mode)
 
 (use-package sudo-edit)
+
+(use-package inkpot-theme)
 
 (provide 'melpa-mirror-packages)
