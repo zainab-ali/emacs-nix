@@ -302,10 +302,6 @@ and `line-end-position'."
 
 (use-package groovy-mode)
 
-(use-package haskell-mode
-  (add-hook 'haskell-mode-hook 'code-mode)
-  )
-
 (use-package company
   :diminish company-mode
   :bind
