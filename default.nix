@@ -13,7 +13,7 @@ let
     stdenv.mkDerivation {
       name = "emacs-site";
       src = lib.cleanSource ./src;
-      buildInputs = [ emacs mu offlineimap ];
+      buildInputs = [ emacsWithPackages ];
       buildPhase = ''
         emacs --batch --eval "(byte-recompile-file \"$(pwd)/melpa-mirror-packages.el\" t 0)"
         emacs --batch --eval "(byte-recompile-file \"$(pwd)/project+.el\" t 0)"
@@ -24,12 +24,12 @@ let
         cp -r . $out/share/emacs/site-lisp/
       '';
     };
-  emacs = with pkgs;
+  emacsWithPackages = with pkgs;
     emacsWithPackagesFromUsePackage {
       config = builtins.readFile ./src/melpa-mirror-packages.el;
       alwaysEnsure = true;
     };
 in pkgs.symlinkJoin {
   name = "emacs-site-lisp";
-  paths = [ emacs site ];
+ paths = [ site emacsWithPackages  ];
 }
