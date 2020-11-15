@@ -296,6 +296,7 @@ and `line-end-position'."
   ;; :mode "\\.\\(scala\\||sc\\)\\'"
   :config
   (add-hook 'scala-mode-hook 'code-mode)
+  (add-hook 'scala-mode-hook 'company-mode)
   (add-hook 'scala-mode-hook 'yas-minor-mode))
 
 
