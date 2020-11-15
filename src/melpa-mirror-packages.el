@@ -299,6 +299,7 @@ and `line-end-position'."
   (add-hook 'scala-mode-hook 'company-mode)
   (add-hook 'scala-mode-hook 'yas-minor-mode))
 
+(use-package yasnippet)
 
 (use-package groovy-mode)
 
