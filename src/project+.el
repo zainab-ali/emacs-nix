@@ -35,8 +35,8 @@
 
 (cl-defun project+-start-nix-shell ()
   (interactive)
-  (let
-      ((dir (car (project-roots (project-current t)))))
+  (let* ((dir (car (project-roots (project-current t))))
+       (default-directory dir))
     (nix-eshell (expand-file-name (concat dir "shell.nix")))))
 
 ;;;###autoload
