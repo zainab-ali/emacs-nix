@@ -298,21 +298,6 @@ and `line-end-position'."
   (add-hook 'scala-mode-hook 'code-mode)
   (add-hook 'scala-mode-hook 'yas-minor-mode))
 
-(use-package lsp-mode
-  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-  :init (setq lsp-keymap-prefix "C-c l")
-  :hook
-  (scala-mode . lsp)
-  (lsp-mode . lsp-lens-mode)
-  :commands lsp
-  :config
-  (add-hook 'lsp-mode-hook
-	    (lambda () (setq after-change-functions nil)))
-  )
-
-(use-package lsp-ui)
-
-(use-package lsp-metals)
 
 (use-package groovy-mode)
 
