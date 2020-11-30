@@ -208,7 +208,7 @@ and `line-end-position'."
              c-w
              text-objects
              atom-motions
-	     additional-movement
+             additional-movement
              slurp/barf-lispy))
   :hook
   ((emacs-lisp-mode . lispyville-mode)
@@ -255,9 +255,9 @@ and `line-end-position'."
   (setq fill-column 80)
   ;; (add-hook 'org-mode-hook 'auto-fill-mode)
   (add-hook 'org-mode-hook
-	    (lambda()
-	      (buffer-face-set '(:family "Source Serif Pro" :height 280))
-	       ))
+            (lambda()
+              (buffer-face-set '(:family "Source Serif Pro" :height 280))
+               ))
   (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages

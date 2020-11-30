@@ -31,5 +31,5 @@ let
     };
 in pkgs.symlinkJoin {
   name = "emacs-site-lisp";
- paths = [ site emacsWithPackages  ];
+ paths = [ site emacsWithPackages ];
 }
