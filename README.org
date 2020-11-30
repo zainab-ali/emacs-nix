@@ -11,7 +11,7 @@ The code contained in this repository is licensed under [[https://www.gnu.org/li
 
 ** Download
 
-Run the following command on every time this code is modified.
+   Run the following command on every time this code is modified.
 
 #+begin_src sh
 nix-env -i -f default.nix
@@ -65,6 +65,18 @@ Add the following to the ~init.el~:
 (setq gc-cons-threshold (* 2 1000 1000))
 
 #+END_SRC
+
+** Fonts
+
+This assumes the font configuration
+#+begin_src
+  fonts = with pkgs; [
+    source-code-pro
+    source-sans-pro
+    source-serif-pro
+    ibm-plex
+  ];
+#+end_src
 
 * Addendum
 
