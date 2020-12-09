@@ -351,6 +351,7 @@ and `line-end-position'."
     (setq mu4e-completing-read-function 'ivy-completing-read)
     (setq mail-user-agent 'mu4e-user-agent)))
 
+(use-package launchctl)
 (use-package yaml-mode)
 
 (use-package sudo-edit)
