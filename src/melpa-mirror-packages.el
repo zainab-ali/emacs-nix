@@ -118,6 +118,7 @@ and `line-end-position'."
 
 
 (add-hook 'css-mode-hook 'code-mode)
+(add-to-list 'auto-mode-alist '("\\.css.pp\\'" . css-mode))
 
 (use-package dired
   :config
@@ -174,6 +175,7 @@ and `line-end-position'."
   (add-hook 'racket-mode-hook 'racket-xp-mode)
   (add-hook 'racket-mode-hook 'rainbow-delimiters-mode)
   (add-hook 'racket-mode-hook 'code-mode)
+  (add-hook 'racket-mode-hook 'yas-minor-mode)
 
   (evil-define-key 'normal racket-mode-map
     (kbd "C-c C-c b") 'racket-run)
@@ -206,8 +208,13 @@ and `line-end-position'."
   :config (lispyville-set-key-theme
            '(operators
              c-w
+	     c-u
+	     prettify
+	     wrap
+	     mark
              text-objects
              atom-motions
+	     additional
 	     additional-movement
              slurp/barf-lispy))
   :hook
@@ -299,7 +306,26 @@ and `line-end-position'."
   (add-hook 'scala-mode-hook 'company-mode)
   (add-hook 'scala-mode-hook 'yas-minor-mode))
 
-(use-package yasnippet)
+(use-package yasnippet
+  :commands (yas-minor-mode yas-reload-all yas-expand)
+  :config (yas-reload-all)
+  :bind
+  (:map yas-minor-mode-map
+	("C-M-j" . yas-expand/evil)))
+
+(defun yas-expand/evil (&rest args)
+  "Expand in insert-mode. See `yas-expand'."
+  (interactive)
+  (cond
+    ; If in visual state, go to insert state to type
+   ((evil-visual-state-p) (progn
+			    (evil-insert 0)
+			    (apply #'yas-insert-snippet args)))
+					; If in insert state apply yas as usual
+   ((evil-insert-state-p)
+    (apply #'yas-expand args))
+					; We don't have a handler for normal state.  The yas-expand call was a typo
+   ))
 
 (use-package groovy-mode)
 
