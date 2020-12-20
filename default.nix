@@ -1,8 +1,10 @@
 {
   nixpkgs ? import <nixpkgs> {
     overlays = [
-      (import (builtins.fetchTarball {
-        url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
+      (import (builtins.fetchGit {
+        url = "https://github.com/nix-community/emacs-overlay.git";
+        rev = "ef220b4a0990fd0f5dd25c588c24b2c1ad88c8fc";
+        ref = "master";
       }))
     ];
   }
