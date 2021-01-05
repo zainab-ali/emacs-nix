@@ -1,3 +1,6 @@
 [submodule "src/pollen-mode"]
 	path = src/pollen-mode
 	url = git@github.com:zainab-ali/pollen-mode.git
+[submodule "src/nano-emacs"]
+	path = src/nano-emacs
+	url = git@github.com:zainab-ali/nano-emacs.git

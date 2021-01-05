@@ -261,10 +261,6 @@ and `line-end-position'."
   ;; Enforce a line length of 80
   (setq fill-column 80)
   ;; (add-hook 'org-mode-hook 'auto-fill-mode)
-  (add-hook 'org-mode-hook
-	    (lambda()
-	      (buffer-face-set '(:family "Source Serif Pro" :height 280))
-	       ))
   (setq org-confirm-babel-evaluate nil)
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -355,7 +351,5 @@ and `line-end-position'."
 (use-package yaml-mode)
 
 (use-package sudo-edit)
-
-(use-package inkpot-theme)
 
 (provide 'melpa-mirror-packages)
