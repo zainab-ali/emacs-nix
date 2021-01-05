@@ -115,7 +115,7 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook 'show-paren-mode)
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
-
+(add-hook 'emacs-lisp-mode-hook 'yas-minor-mode)
 
 (add-hook 'css-mode-hook 'code-mode)
 (add-to-list 'auto-mode-alist '("\\.css.pp\\'" . css-mode))
