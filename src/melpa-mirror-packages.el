@@ -46,6 +46,7 @@
   (setq ivy-use-virtual-buffers t)
   (setq enable-recursive-minibuffers t)
   (setq ivy-count-format "(%d/%d) ")
+  (setq completing-read-function 'ivy-completing-read)
   :bind
   ("C-c C-r" . 'ivy-resume)
   ("C-c v" . 'ivy-switch-view)
@@ -64,6 +65,13 @@
    ("M-i" . 'counsel-imenu)
    ("M-x" . 'counsel-M-x)
    ("C-x b" . 'counsel-switch-buffer)))
+
+;; Use counsel to find functions too (counsel-find-function) doesn't exist
+;; The previous config has this
+;; (ivy-set-actions
+;;  'counsel-minor
+;;  `(("d" ,(lambda (x) (find-function (cdr x))) "definition")
+;;    ("h" ,(lambda (x) (describe-function (cdr x))) "help")))
 
 (use-package swiper
   :after ivy)
@@ -116,15 +124,24 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook 'electric-pair-mode)
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
 (add-hook 'emacs-lisp-mode-hook 'yas-minor-mode)
+(add-hook 'emacs-lisp-mode-hook 'prettify-symbols-mode)
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (push '("lambda" . 955) prettify-symbols-alist)))
 
 (add-hook 'css-mode-hook 'code-mode)
 (add-to-list 'auto-mode-alist '("\\.css.pp\\'" . css-mode))
+
+(evil-define-key 'normal Info-mode-map (kbd "l") 'evil-forward-char)
+(evil-define-key 'normal Info-mode-map (kbd "h") 'evil-backward-char)
+
 
 (use-package dired
   :config
   (evil-collection-dired-setup)
   ;; Lets us copy from one open dired buffer to another
   (setq dired-dwim-target t)
+  (add-hook 'dired-mode-hook 'dired-hide-details-mode)
   )
 
 (use-package dired-x
@@ -187,20 +204,7 @@ and `line-end-position'."
 
 (use-package rainbow-delimiters
   :config
-  (add-hook
-   'rainbow-delimiters-mode-hook
-   (lambda ()
-     (set-face-attribute 'rainbow-delimiters-depth-1-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-2-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-3-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-4-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-5-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-6-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-7-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-8-face nil :weight 'semi-bold)
-     (set-face-attribute 'rainbow-delimiters-depth-9-face nil :weight 'semi-bold)
-     ))
-  )
+  (set-face-attribute 'rainbow-delimiters-base-face nil :weight 'semi-light))
 
 (use-package lispyville
   :diminish lispyville-mode
@@ -208,18 +212,33 @@ and `line-end-position'."
   :config (lispyville-set-key-theme
            '(operators
              c-w
-	     c-u
-	     prettify
-	     wrap
-	     mark
+             c-u
+             prettify
+             wrap
+             mark
              text-objects
              atom-motions
-	     additional
-	     additional-movement
+             additional
+             additional-movement
              slurp/barf-lispy))
+  (evil-define-key 'visual lispyville-mode-map "b" 'lispy-parens)
+  (evil-define-key 'normal lispyville-mode-map "Q" 'save-buffer)
+  (evil-define-key 'insert lispyville-mode-map (kbd "M-l")
+    'lispyville-my-insert-up-list)
   :hook
   ((emacs-lisp-mode . lispyville-mode)
    (racket-mode . lispyville-mode)))
+
+(defun lispyville-my-insert-up-list ()
+  "Assuming there is a parenthesis directly in front of the point,
+this moves the point past it."
+  (interactive)
+  (if (evil-insert-state-p)
+      (if (equal (thing-at-point 'char) ")")
+          (progn (forward-char)
+                 (insert ?\s))
+        (error "Next character %s is not a closing parenthesis"))
+    (error "Not in insert state")))
 
 (use-package avy
   :bind
@@ -307,7 +326,9 @@ and `line-end-position'."
   :config (yas-reload-all)
   :bind
   (:map yas-minor-mode-map
-	("C-M-j" . yas-expand/evil)))
+        ("C-M-j" . yas-expand/evil))
+  (:map yas/keymap
+        ("C-M-j" . yas/next-field-or-maybe-expand)))
 
 (defun yas-expand/evil (&rest args)
   "Expand in insert-mode. See `yas-expand'."
@@ -315,12 +336,12 @@ and `line-end-position'."
   (cond
     ; If in visual state, go to insert state to type
    ((evil-visual-state-p) (progn
-			    (evil-insert 0)
-			    (apply #'yas-insert-snippet args)))
-					; If in insert state apply yas as usual
+                            (evil-insert 0)
+                            (apply #'yas-insert-snippet args)))
+                                        ; If in insert state apply yas as usual
    ((evil-insert-state-p)
     (apply #'yas-expand args))
-					; We don't have a handler for normal state.  The yas-expand call was a typo
+                                        ; We don't have a handler for normal state.  The yas-expand call was a typo
    ))
 
 (use-package groovy-mode)
@@ -351,5 +372,12 @@ and `line-end-position'."
 (use-package yaml-mode)
 
 (use-package sudo-edit)
+
+;; Used to namespace elisp when writing libraries
+(use-package names)
+(use-package nameless)
+
+;; Elisp package linter
+(use-package flycheck-package)
 
 (provide 'melpa-mirror-packages)
