@@ -128,14 +128,18 @@ Inserts the block at the end of the code.org file."
   (interactive)
   (let* ((os (--filter (not (= (overlay-start it) (overlay-end it)))
                        (coe-code--overlays)))
-        (vals (--map
+         (vals (--sort
+                (< (caar it) (caar other))
+                (--map
                (cons (cons (overlay-start it) (overlay-end it))
                      (overlay-get it 'coe-type))
-               os))
+               os)))
         (filename (coe-code--diff-filename (current-buffer))))
     (unless (seq-empty-p vals)
       (with-temp-buffer
-      (insert (format "%s" vals))
+        (insert "(\n")
+        (--each vals (insert (format "%s\n" it)))
+        (insert ")")
       (write-region nil nil filename)))))
 
 (defun coe-code--load-diff ()
