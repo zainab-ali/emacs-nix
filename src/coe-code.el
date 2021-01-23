@@ -171,17 +171,27 @@ Inserts the block at the end of the code.org file."
 (defun coe-code-diff-add (begin end)
   "Highlights a region as added code."
   (interactive "r")
-  (coe-code--overlay-insert begin end 'add))
+  (coe-code--overlay-insert begin end 'add)
+  (deactivate-mark))
 
 (defun coe-code-diff-remove (begin end)
   "Highlights a region as removeed code."
   (interactive "r")
-  (coe-code--overlay-insert begin end 'remove))
+  (coe-code--overlay-insert begin end 'remove)
+  (deactivate-mark))
 
 (defun coe-code-diff-modify (begin end)
   "Highlights a region as modifyed code."
   (interactive "r")
-  (coe-code--overlay-insert begin end 'modify))
+  (coe-code--overlay-insert begin end 'modify)
+  (deactivate-mark))
+
+(defun coe-code-diff-delete ()
+  "Delete the overlay at point."
+  (interactive)
+  (--each
+      (--filter (overlay-get it 'coe-type) (overlays-at (point)))
+    (delete-overlay it)))
 
 (defun coe-code--overlay-insert (begin end type)
   "Highlights a region."
@@ -195,11 +205,15 @@ Inserts the block at the end of the code.org file."
 
 (define-minor-mode
   coe-code-mode
-  "Mode for code.org files in the craft of emacs book."
+  "Mode for code.org files in the craft of emacs book.
+  \\{coe-code-mode-map}"
   nil
   nil
-  `((,(kbd "C-c c") . ,#'coe-code-step))
-
+  `((,(kbd "C-c c") . ,#'coe-code-step)
+    (,(kbd "C-c a") . ,#'coe-code-diff-add)
+    (,(kbd "C-c r") . ,#'coe-code-diff-remove)
+    (,(kbd "C-c m") . ,#'coe-code-diff-modify)
+    (,(kbd "C-c <backspace>") . ,#'coe-code-diff-delete))
   (if coe-code-mode
       ;; Enable coe
       (progn (add-hook 'before-save-hook #'coe-code--save-diff nil t)
