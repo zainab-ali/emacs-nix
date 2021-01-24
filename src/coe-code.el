@@ -36,6 +36,16 @@
 ;; column-enforce-column: 80
 ;; End:
 
+;; TODO - the overlays are currently stored within the buffer, such that the
+;; buffer represents a single source of truth. Unfortunately, the addition of
+;; the surround type means that there isn't a one to one correspondence between
+;; a diff and an overlay. surround diffs can be nested on top of each other and
+;; still be consistent, but nested surround overlays appear invisible. We should
+;; instead have two overlays per surround - each on the start and end
+;; parentheses. We should have a buffer-local map of diff to overlay such that
+;; a surround overlay can still be deleted. We should get rid of overlay
+;; priority once done.
+
 ;;; Code:
 
 ;; Construction
@@ -165,17 +175,20 @@ Inserts the block at the end of the code.org file."
   "The face for the added code overlay.")
 
 (defface coe-code-face-remove '((t :background "#754a49"))
-  "The face for the added code overlay.")
+  "The face for the deleted code overlay.")
 
-(defface coe-code-face-modify '((t :background "#756649"))
-  "The face for the added code overlay.")
+(defface coe-code-face-replace '((t :background "#756649"))
+  "The face for the replaced code overlay.")
+
+(defface coe-code-face-surround '((t :background "#614875"))
+  "The face for the surrounded code overlay.")
 
 ;; Diff insertion
 
 (defun coe-code-diff-add (begin end)
   "Highlights a region as added code."
   (interactive "r")
-  (coe-code--overlay-insert begin end 'add)
+  (coe-code--overlay-insert begin end 'add t)
   (deactivate-mark))
 
 (defun coe-code-diff-remove (begin end)
@@ -184,10 +197,16 @@ Inserts the block at the end of the code.org file."
   (coe-code--overlay-insert begin end 'remove)
   (deactivate-mark))
 
-(defun coe-code-diff-modify (begin end)
-  "Highlights a region as modifyed code."
+(defun coe-code-diff-replace (begin end)
+  "Highlights a region as replaceed code."
   (interactive "r")
-  (coe-code--overlay-insert begin end 'modify)
+  (coe-code--overlay-insert begin end 'replace)
+  (deactivate-mark))
+
+(defun coe-code-diff-surround (begin end)
+  "Highlights an s-expression as being raised into a list."
+  (interactive "r")
+  (coe-code--overlay-insert begin end 'surround)
   (deactivate-mark))
 
 (defun coe-code-diff-delete ()
@@ -197,15 +216,28 @@ Inserts the block at the end of the code.org file."
       (--filter (overlay-get it 'coe-type) (overlays-at (point)))
     (delete-overlay it)))
 
-(defun coe-code--overlay-insert (begin end type)
-  "Highlights a region."
+(defun coe-code--overlay-insert (begin end type &optional priority)
+  "Highlights a region.
+
+PRIORITY indicates if the overlay should be on top of the rest.
+The added code overlay may live on top of the surround overlay to indicate that
+a an atom was surrounded by parentheses and s-expressions were subsequently
+added within those parentheses. For example, an atom could be modified to be
+in the body of a let block:
+
+  x => (let (x 1) x)
+
+The let and (x 1) expressions have been added and the entire block is 
+surrounded."
   (let ((face (pcase type
                 ('add 'coe-code-face-add)
                 ('remove 'coe-code-face-remove)
-                ('modify 'coe-code-face-modify)))
+                ('replace 'coe-code-face-replace)
+                ('surround 'coe-code-face-surround)))
         (o (make-overlay begin end)))
     (overlay-put o 'coe-type type)
-    (overlay-put o 'face face)))
+    (overlay-put o 'face face)
+    (when priority (overlay-put o 'priority 1))))
 
 (define-minor-mode
   coe-code-mode
@@ -215,8 +247,9 @@ Inserts the block at the end of the code.org file."
   nil
   `((,(kbd "C-c c") . ,#'coe-code-step)
     (,(kbd "C-c a") . ,#'coe-code-diff-add)
-    (,(kbd "C-c r") . ,#'coe-code-diff-remove)
-    (,(kbd "C-c m") . ,#'coe-code-diff-modify)
+    (,(kbd "C-c d") . ,#'coe-code-diff-remove)
+    (,(kbd "C-c r") . ,#'coe-code-diff-replace)
+    (,(kbd "C-c s") . ,#'coe-code-diff-surround)
     (,(kbd "C-c <backspace>") . ,#'coe-code-diff-delete))
   (if coe-code-mode
       ;; Enable coe
