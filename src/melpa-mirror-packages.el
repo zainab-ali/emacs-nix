@@ -24,7 +24,10 @@
   :init (setq
          evil-want-C-u-scroll t
          evil-want-integration t
-         evil-want-keybinding nil))
+         evil-want-keybinding nil)
+  (global-set-key (kbd "C-SPC") #'universal-argument))
+
+
 
 (use-package evil-collection
   :after evil
@@ -125,6 +128,8 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook 'code-mode)
 (add-hook 'emacs-lisp-mode-hook 'yas-minor-mode)
 (add-hook 'emacs-lisp-mode-hook 'prettify-symbols-mode)
+(add-hook 'emacs-lisp-mode-hook 'nameless-mode)
+(add-hook 'emacs-lisp-mode-hook 'hs-minor-mode)
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (push '("lambda" . 955) prettify-symbols-alist)))

@@ -50,6 +50,8 @@
 
 ;; Construction
 
+;; Editing
+
 (defun coe-code-step (headline)
   "Insert a new headline and src block at the end of the file.
 
@@ -102,7 +104,6 @@ columns instead."
   "Copies the last src block in an code.org file.
 
 Inserts the block at the end of the code.org file."
-  
   (let ((last-block nil))
     (org-element-map
         (org-element-parse-buffer)
@@ -119,11 +120,38 @@ Inserts the block at the end of the code.org file."
 
 ;; Diff core
 
+(defun coe-code--overlays-between (begin end)
+  "Overlays between two points."
+  (--filter (overlay-get it 'coe-type)
+            (overlays-in begin end)))
+
 (defun coe-code--overlays ()
   "Get all the overlays in the file."
-  (interactive)
-  (--filter (overlay-get it 'coe-type)
-            (overlays-in (point-min) (point-max))))
+  (coe-code--overlays-between (point-min) (point-max)))
+
+(defun coe-code--overlay-insert (begin end type &optional priority)
+  "Highlights a region.
+
+PRIORITY indicates if the overlay should be on top of the rest.
+The added code overlay may live on top of the surround overlay to indicate that
+a an atom was surrounded by parentheses and s-expressions were subsequently
+added within those parentheses. For example, an atom could be modified to be
+in the body of a let block:
+
+  x => (let (x 1) x)
+
+The let and (x 1) expressions have been added and the entire block is
+surrounded."
+  (let ((face (pcase type
+                ('add 'coe-code-face-add)
+                ('remove 'coe-code-face-remove)
+                ('replace 'coe-code-face-replace)
+                ('surround 'coe-code-face-surround)
+                ('omit 'coe-code-face-omit)))
+        (o (make-overlay begin end)))
+    (overlay-put o 'coe-type type)
+    (overlay-put o 'face face)
+    (when priority (overlay-put o 'priority 1))))
 
 
 ;; Diff persistence
@@ -133,7 +161,7 @@ Inserts the block at the end of the code.org file."
   (concat (file-name-directory (buffer-file-name buf))
           "diff.el"))
 
-(defun coe-code--save-diff ()
+(defun coe-code-save-diff ()
   "Save the diff regions to a file."
   (interactive)
   (let* ((os (--filter (not (= (overlay-start it) (overlay-end it)))
@@ -154,7 +182,6 @@ Inserts the block at the end of the code.org file."
 
 (defun coe-code--load-diff ()
   "Load the diff regions from a file."
-  (interactive)
   (let ((diff-filename (coe-code--diff-filename (current-buffer))))
     (when (file-exists-p diff-filename)
       (let ((os (with-temp-buffer
@@ -164,7 +191,7 @@ Inserts the block at the end of the code.org file."
           (pcase-let ((`((,start . ,end) . ,type) it))
             (coe-code--overlay-insert start end type)))))))
 
-(defun coe--delete-regions ()
+(defun coe-code--delete-overlays ()
   "Delete the overlays."
   (--each (coe-code--overlays) (delete-overlay it)))
 
@@ -216,28 +243,18 @@ Inserts the block at the end of the code.org file."
       (--filter (overlay-get it 'coe-type) (overlays-at (point)))
     (delete-overlay it)))
 
-(defun coe-code--overlay-insert (begin end type &optional priority)
-  "Highlights a region.
+;; Omission
 
-PRIORITY indicates if the overlay should be on top of the rest.
-The added code overlay may live on top of the surround overlay to indicate that
-a an atom was surrounded by parentheses and s-expressions were subsequently
-added within those parentheses. For example, an atom could be modified to be
-in the body of a let block:
+;; Omission face
 
-  x => (let (x 1) x)
+(defface coe-code-face-omit '((t :background "#797282"))
+  "The face for the surrounded code overlay.")
 
-The let and (x 1) expressions have been added and the entire block is 
-surrounded."
-  (let ((face (pcase type
-                ('add 'coe-code-face-add)
-                ('remove 'coe-code-face-remove)
-                ('replace 'coe-code-face-replace)
-                ('surround 'coe-code-face-surround)))
-        (o (make-overlay begin end)))
-    (overlay-put o 'coe-type type)
-    (overlay-put o 'face face)
-    (when priority (overlay-put o 'priority 1))))
+(defun coe-code-omit (begin end)
+  "Highlights an s-expression as being omitted."
+  (interactive "r")
+  (coe-code--overlay-insert begin end 'omit)
+  (deactivate-mark))
 
 (define-minor-mode
   coe-code-mode
@@ -250,15 +267,98 @@ surrounded."
     (,(kbd "C-c d") . ,#'coe-code-diff-remove)
     (,(kbd "C-c r") . ,#'coe-code-diff-replace)
     (,(kbd "C-c s") . ,#'coe-code-diff-surround)
+    (,(kbd "C-c 0") . ,#'coe-code-omit)
     (,(kbd "C-c <backspace>") . ,#'coe-code-diff-delete))
   (if coe-code-mode
       ;; Enable coe
-      (progn (add-hook 'before-save-hook #'coe-code--save-diff nil t)
+      (progn (add-hook 'before-save-hook #'coe-code-save-diff nil t)
              (coe-code--load-diff))
     ;; Disable coe
     (progn (coe-code--save-diff)
-           (coe--delete-regions)
-           (remove-hook 'before-save-hook #'coe-code--save-diff t))))
+           (coe-code--delete-overlays)
+           (remove-hook 'before-save-hook #'coe-code-save-diff t))))
+
+;; Export
+
+(defun coe-code--export-text ()
+  "Return the marked up src block text at point."
+  (let ((el (org-element-at-point)))
+    (pcase el
+      (`(src-block ,ps)
+       (let* ((begin (plist-get ps :begin))
+              (end (plist-get ps :end))
+              (os (coe-code--overlays-between begin end))
+              (src (plist-get ps :value))
+              (offset (save-excursion
+                           (goto-char begin)
+                           (forward-line)
+                           (- (line-beginning-position) 1))))
+
+         (with-temp-buffer
+           (erase-buffer)
+           (insert src)
+           (--each os
+             (coe-code--overlay-insert (- (overlay-start it) offset)
+                               (- (overlay-end it) offset)
+                               (overlay-get it 'coe-type))
+             (overlay-start it))
+           (emacs-lisp-mode)
+           (indent-region (point-min) (point-max))
+           (--each (coe-code--overlays)
+             (coe-code--export-overlay-to-text it))
+           (coe-code--delete-overlays)
+           (buffer-string))))
+      (_ (message "No src block at point. Found type: %s" (car el))))))
+
+(defun coe-code--export-overlay-to-text (o)
+  "Write an ovrelay to the current export buffer.
+
+The buffer is for export purposes only, so only contains code from a single
+src-block. The overlaid text is surrounded by symbols depending on its type."
+  (pcase (overlay-get o 'coe-type)
+    ('add
+     (goto-char (overlay-start o))
+     (insert ?≪)
+     (goto-char (overlay-end o))
+     (insert ?≫))
+    ('omit
+     (delete-region (overlay-start o) (overlay-end o))
+     (goto-char (overlay-start o))
+     (insert ?…))
+    (_ )))
+
+(defun coe-code--export-headlines ()
+  "Return a list of all headlines with accompanying source positions."
+  (org-element-map (org-element-parse-buffer)
+      'headline
+    (lambda (el)
+      (-when-let* ((text (org-element-property :raw-value el))
+                   (section (--find (equal (org-element-type it) 'section)
+                                    (org-element-contents el)))
+                   (src-block (--find (equal (org-element-type it) 'src-block)
+                                      (org-element-contents section))))
+        (cons text (org-element-property :begin src-block))))))
+
+(defun coe-code--code-filename (buf)
+  "Computes the name of the code.org file"
+  (concat (file-name-directory (buffer-file-name buf))
+          "code.org"))
+
+(defun coe-code-export ()
+  "Insert a marked up block from the code.org file into the current buffer.
+
+The current buffer is assumed to be a book .pm file with the source tag
+representing code snippets."
+  (interactive)
+  (let* ((buf (current-buffer))
+         (code-buf (find-file-noselect (coe-code--code-filename (current-buffer))))
+         (text (with-current-buffer code-buf
+                 (let* ((blocks (coe-code--export-headlines))
+                        (choice (completing-read "Step: " blocks nil t))
+                        (src-point (cdr (assoc-string choice blocks))))
+                   (goto-char src-point)
+                   (coe-code--export-text)))))
+    (insert (format "\n◊source{\n%s}"text))))
 
 (provide 'coe-code)
 ;;; coe-code.el ends here
