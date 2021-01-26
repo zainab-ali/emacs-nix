@@ -256,28 +256,6 @@ surrounded."
   (coe-code--overlay-insert begin end 'omit)
   (deactivate-mark))
 
-(define-minor-mode
-  coe-code-mode
-  "Mode for code.org files in the craft of emacs book.
-  \\{coe-code-mode-map}"
-  nil
-  nil
-  `((,(kbd "C-c c") . ,#'coe-code-step)
-    (,(kbd "C-c a") . ,#'coe-code-diff-add)
-    (,(kbd "C-c d") . ,#'coe-code-diff-remove)
-    (,(kbd "C-c r") . ,#'coe-code-diff-replace)
-    (,(kbd "C-c s") . ,#'coe-code-diff-surround)
-    (,(kbd "C-c 0") . ,#'coe-code-omit)
-    (,(kbd "C-c <backspace>") . ,#'coe-code-diff-delete))
-  (if coe-code-mode
-      ;; Enable coe
-      (progn (add-hook 'before-save-hook #'coe-code-save-diff nil t)
-             (coe-code--load-diff))
-    ;; Disable coe
-    (progn (coe-code--save-diff)
-           (coe-code--delete-overlays)
-           (remove-hook 'before-save-hook #'coe-code-save-diff t))))
-
 ;; Export
 
 (defun coe-code--export-text ()
@@ -345,20 +323,51 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
           "code.org"))
 
 (defun coe-code-export ()
-  "Insert a marked up block from the code.org file into the current buffer.
-
-The current buffer is assumed to be a book .pm file with the source tag
-representing code snippets."
+  "Export all code snippets to a code directory."
   (interactive)
-  (let* ((buf (current-buffer))
-         (code-buf (find-file-noselect (coe-code--code-filename (current-buffer))))
-         (text (with-current-buffer code-buf
-                 (let* ((blocks (coe-code--export-headlines))
-                        (choice (completing-read "Step: " blocks nil t))
-                        (src-point (cdr (assoc-string choice blocks))))
-                   (goto-char src-point)
-                   (coe-code--export-text)))))
-    (insert (format "\n◊source{\n%s}"text))))
+  (--each-indexed (coe-code--export-headlines)
+    (pcase it
+      (`(,name . ,point)
+       (goto-char point)
+       (let ((text (coe-code--export-text)))
+         (with-temp-buffer
+           (insert text)
+           (write-file (concat default-directory "/code/"
+                               (number-to-string it-index) "-" name))))))))
+
+;; Minor mode
+
+(define-minor-mode
+  coe-code-mode
+  "Mode for code.org files in the craft of emacs book.
+  \\{coe-code-mode-map}"
+  nil
+  nil
+  `((,(kbd "C-c c") . ,#'coe-code-step)
+    (,(kbd "C-c a") . ,#'coe-code-diff-add)
+    (,(kbd "C-c d") . ,#'coe-code-diff-remove)
+    (,(kbd "C-c r") . ,#'coe-code-diff-replace)
+    (,(kbd "C-c s") . ,#'coe-code-diff-surround)
+    (,(kbd "C-c 0") . ,#'coe-code-omit)
+    (,(kbd "C-c e") . ,#'coe-code-export)
+    (,(kbd "C-c <backspace>") . ,#'coe-code-diff-delete))
+  (if coe-code-mode
+      ;; Enable coe
+      (progn (add-hook 'before-save-hook #'coe-code-save-diff nil t)
+             (coe-code--load-diff))
+    ;; Disable coe
+    (progn (coe-code--save-diff)
+           (coe-code--delete-overlays)
+           (remove-hook 'before-save-hook #'coe-code-save-diff t))))
+
+;; Book
+
+(defun coe-code-steps ()
+  "A list of all the files under the code directory.
+
+This is used by yas in pollen-markup-mode to insert a src code snippet."
+  (interactive)
+  (directory-files (concat default-directory "code")))
 
 (provide 'coe-code)
 ;;; coe-code.el ends here
