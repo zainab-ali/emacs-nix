@@ -176,12 +176,15 @@ surrounded."
   (interactive)
   (let* ((os (--filter (not (= (overlay-start it) (overlay-end it)))
                        (coe-code--overlays)))
-         (vals (--sort
-                (< (caar it) (caar other))
-                (--map
-               (cons (cons (overlay-start it) (overlay-end it))
-                     (overlay-get it 'coe-type))
-               os))))
+         (vals (-distinct
+                (--sort
+                (--sort
+
+                 (< (caar it) (caar other))
+                 (--map
+                  (cons (cons (overlay-start it) (overlay-end it))
+                        (overlay-get it 'coe-type))
+                  os)))))
     (unless (seq-empty-p vals)
       (with-temp-buffer
         (insert "(\n")
