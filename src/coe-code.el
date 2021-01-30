@@ -381,17 +381,17 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
 
 (defun coe-code--export (dirname export-function)
   "Export all code snippets to a directory."
-  (--each-indexed (coe-code--export-headlines)
-    (pcase it
-      (`(,name . ,point)
-       (goto-char point)
-       (let ((text (coe-code--export-text export-function)))
-         (with-temp-buffer
-           (insert text)
-           (write-file (concat default-directory
-                               (format "/%s/" dirname)
-                               (number-to-string it-index)
-                               "-" name))))))))
+  (let ((dir (concat default-directory (format "/%s/" dirname))))
+    (delete-directory dir t)
+    (make-directory dir)
+    (--each (coe-code--export-headlines)
+      (pcase it
+        (`(,name . ,point)
+         (goto-char point)
+         (let ((text (coe-code--export-text export-function)))
+           (with-temp-buffer
+             (insert text)
+             (write-file (concat dir name) nil))))))))
 
 (defun coe-code-export-code ()
   "Export all snippets to a 'code' directory."
