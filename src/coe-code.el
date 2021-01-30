@@ -147,7 +147,7 @@ surrounded."
                 ('remove 'coe-code-face-diff-remove)
                 ('replace 'coe-code-face-diff-replace)
                 ('surround 'coe-code-face-diff-surround)
-                ('omit 'coe-code-face-diff-omit)
+                ('omit 'coe-code-face-omit)
                 ;; TODO : Should this be centralized?
                 ('region 'coe-code-face-scratch-region)
                 ('point 'coe-code-face-scratch-point)
