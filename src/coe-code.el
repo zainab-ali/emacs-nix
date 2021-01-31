@@ -350,11 +350,12 @@ highlighted.")
   "Save the steps to a file."
   (interactive)
   (coe-code--read-sort-steps)
-  (let ((filename (coe-code--read-filename (current-buffer))))
-    (when coe-code--read-steps
+  (let ((filename (coe-code--read-filename (current-buffer)))
+        (steps coe-code--read-steps))
+    (when steps
       (with-temp-buffer
         (insert "(\n")
-        (--each coe-code--read-steps (insert (format "%S\n" it)))
+        (--each steps (insert (format "%S\n" it)))
         (insert ")")
         (write-region nil nil filename)))))
 
