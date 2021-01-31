@@ -1,4 +1,4 @@
-;;; coe-code.el --- Edit COE code.org files         -*- lexical-binding: t; -*-
+;;; coe-code.el --- Edit COE code     files         -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021  Zainab Ali
 
@@ -26,10 +26,21 @@
 ;; general purpose org files - they only contain headings and code snippets
 ;; which are referenced in the book (.pm) files.
 ;;
-;; This minor mode is intended for editing such files. It eases snippet writing
-;; by creating snippets off previous ones. It has an overlay feature for
+;; The coe minor mode is intended for editing such files. It eases snippet
+;; writing by creating snippets off previous ones. It has an overlay feature for
 ;; highlighting diff regions. These are stored in a seperate diff.el file that
 ;; can be exported to the (.pm) when the snippets are complete.
+;;
+;;
+;; The coe-scratch minor mode is intended for editing scratch.org files. In
+;; practice, these are similar to code.org snippets, but are exported to a
+;; different scratch directory.
+;;
+;; The read minor mode is meant for exporting pages of a COE reader book.
+;; This is a code snippet annotated with steps indicating how to read it. This
+;; is written with overlays imposed on a single snippet in a code.el file.
+;; The overlays are persisted in a read.el file and exported into a read
+;; directory.
 
 ;; Local Variables:
 ;; nameless-current-name: "coe-code"
@@ -178,19 +189,17 @@ surrounded."
                        (coe-code--overlays)))
          (vals (-distinct
                 (--sort
-                (--sort
-
                  (< (caar it) (caar other))
                  (--map
                   (cons (cons (overlay-start it) (overlay-end it))
                         (overlay-get it 'coe-type))
-                  os)))))
+                  os))))
     (unless (seq-empty-p vals)
       (with-temp-buffer
         (insert "(\n")
         (--each vals (insert (format "%s\n" it)))
         (insert ")")
-      (write-region nil nil filename)))))
+      (write-region nil nil filename))))))
 
 (defun coe-code--load (filename)
   "Load the regions from a file."
@@ -302,10 +311,140 @@ surrounded."
   "Load the scratch regions from a file."
   (coe-code--load (coe-code--scratch-filename (current-buffer))))
 
+;; Reader
+
+(defvar-local coe-code--read-steps nil "A list of steps.
+
+A step is a pair of some text and a list of pairs of start-end points to be
+highlighted.")
+
+(defvar-local coe-code--read-step-number 0 "The index of the current step.")
+
+(defun coe-code--read-filename (buf)
+  "Computes the name of the read.el file"
+  (concat (file-name-directory (buffer-file-name buf))
+          "read.el"))
+
+(defface coe-code-read-face '((t :background "#797282"))
+  "The face for the read code overlay.")
+
+(defun coe-code--read-goto (n)
+  "Go to step N in the step list."
+  (coe-code--delete-overlays)
+  (pcase (nth n coe-code--read-steps)
+    (`(,text . ,regions)
+     (message text)
+     ;; TODO : Read should have its own type
+     (--each regions (coe-code--overlay-insert (car it) (cdr it) 'add)))
+    (_ (message "New step: %s" n))))
+
+(defun coe-code--read-sort-steps ()
+  (setq-local coe-code--read-steps
+              (--map
+               (pcase it
+                 (`(,text . ,regions)
+                  `(,text . ,(--sort (< (car it) (car other)) regions))))
+               coe-code--read-steps)))
+
+(defun coe-code-read-save ()
+  "Save the steps to a file."
+  (interactive)
+  (coe-code--read-sort-steps)
+  (let ((filename (coe-code--read-filename (current-buffer))))
+    (when coe-code--read-steps
+      (with-temp-buffer
+        (insert "(\n")
+        (--each coe-code--read-steps (insert (format "%S\n" it)))
+        (insert ")")
+        (write-region nil nil filename)))))
+
+(defun coe-code-read-load ()
+  "Load the step regions from a file."
+  (let ((filename (coe-code--read-filename (current-buffer))))
+    (when (file-exists-p filename)
+      (let ((steps (with-temp-buffer
+                     (insert-file-contents filename)
+                     (read (buffer-string)))))
+        (setq-local coe-code--read-steps steps)))
+    ;; We step forward to number 0
+    (setq-local coe-code--read-step-number -1)
+    (coe-code-read-forward)))
+
+(defun coe-code-read-forward ()
+  "Go to the next step."
+  (interactive)
+  (when (= coe-code--read-step-number (- (length coe-code--read-steps) 1))
+    ;; We’ve reached the last step
+    (let ((name (read-string "Descrption: " )))
+      (setq-local coe-code--read-steps
+                  (append coe-code--read-steps `((,name . nil))))))
+  (setq-local coe-code--read-step-number (+ coe-code--read-step-number 1))
+  (coe-code--read-goto coe-code--read-step-number))
+
+(defun coe-code-read-backward ()
+  "Go to the previous step."
+  (interactive)
+  (if (> coe-code--read-step-number 0)
+    (progn (setq coe-code--read-step-number (- coe-code--read-step-number 1))
+           (coe-code--read-goto coe-code--read-step-number))
+    (message "Cannot step backwards - no previous step.")))
+
+(defun coe-code-read-highlight (begin end)
+  "Highlights a region as part of the current step."
+  (interactive "r")
+  (setq-local coe-code--read-steps
+              (--update-at
+               coe-code--read-step-number
+               (pcase it
+                 (`(,text . ,regions)
+                  `(,text . ((,begin . ,end) . ,regions))))
+               coe-code--read-steps))
+  ;; TODO : Have a specific type for the reader
+  (coe-code--overlay-insert begin end 'add)
+  (deactivate-mark))
+
+(defun coe-code-read-delete ()
+  "Delete the overlay at point."
+  (interactive)
+  (let ((os (--filter (overlay-get it 'coe-type) (overlays-at (point)))))
+    (-each os
+      (lambda (o)
+        (setq-local coe-code--read-steps
+                    (--update-at
+                     coe-code--read-step-number
+                     (pcase it
+                       (`(,text . ,regions)
+                        (let ((next-regions
+                               (--remove (equal it
+                                                (cons (overlay-start o)
+                                                      (overlay-end o)))
+                                         (cdr s))))
+                          `(,text . ((,begin . ,end) . ,next-regions)))))
+                     coe-code--read-steps))
+        (delete-overlay o)))))
+
 ;; Export
 
-(defun coe-code--export-text (export-function)
-  "Return the marked up src block text at point."
+(defun coe-code--export-elang (src annotations export-function)
+  "Constructs an elang string from SRC annotated with ANNOTATIONS.
+
+Each annotation is a list of the form (TYPE . (START . END))"
+  (with-temp-buffer
+    (erase-buffer)
+    (insert src)
+    (--each annotations
+      (pcase it
+        (`(,coe-type . (,start . ,end))
+         (coe-code--overlay-insert start end coe-type))))
+    (emacs-lisp-mode)
+    (indent-region (point-min) (point-max))
+    (--each (coe-code--overlays)
+      (funcall export-function it))
+    (coe-code--delete-overlays)
+    (buffer-string)))
+
+(defun coe-code--export-org-block (export-function)
+  "Return the marked up src block text at a point in an org buffer."
   (let ((el (org-element-at-point)))
     (pcase el
       (`(src-block ,ps)
@@ -314,24 +453,19 @@ surrounded."
               (os (coe-code--overlays-between begin end))
               (src (plist-get ps :value))
               (offset (save-excursion
-                           (goto-char begin)
-                           (forward-line)
-                           (- (line-beginning-position) 1))))
+                        (goto-char begin)
+                        (forward-line)
+                        (- (line-beginning-position) 1))))
 
-         (with-temp-buffer
-           (erase-buffer)
-           (insert src)
-           (--each os
-             (coe-code--overlay-insert (- (overlay-start it) offset)
-                               (- (overlay-end it) offset)
-                               (overlay-get it 'coe-type))
-             (overlay-start it))
-           (emacs-lisp-mode)
-           (indent-region (point-min) (point-max))
-           (--each (coe-code--overlays)
-             (funcall export-function it))
-           (coe-code--delete-overlays)
-           (buffer-string))))
+         (coe-code--export-elang
+          src
+          (--map
+           (cons (overlay-get it 'coe-type)
+                 (cons (- (overlay-start it) offset)
+                       (- (overlay-end it) offset)))
+
+           os)
+          export-function)))
       (_ (message "No src block at point. Found type: %s" (car el))))))
 
 (defun coe-code--export-code-overlay (o)
@@ -365,6 +499,15 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
     ('point
      (goto-char (+ 1 (overlay-start o)))
      (insert ?|))
+    ('add
+     (goto-char (overlay-start o))
+     (insert ?≪)
+     (goto-char (overlay-end o))
+     (insert ?≫))
+    ('omit
+     (delete-region (overlay-start o) (overlay-end o))
+     (goto-char (overlay-start o))
+     (insert ?…))
     (_ )))
 
 (defun coe-code--export-headlines ()
@@ -379,7 +522,7 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
                                       (org-element-contents section))))
         (cons text (org-element-property :begin src-block))))))
 
-(defun coe-code--export (dirname export-function)
+(defun coe-code--export-org (dirname export-function)
   "Export all code snippets to a directory."
   (let ((dir (concat default-directory (format "/%s/" dirname))))
     (delete-directory dir t)
@@ -388,7 +531,7 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
       (pcase it
         (`(,name . ,point)
          (goto-char point)
-         (let ((text (coe-code--export-text export-function)))
+         (let ((text (coe-code--export-org-block export-function)))
            (with-temp-buffer
              (insert text)
              (write-file (concat dir name) nil))))))))
@@ -396,12 +539,31 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
 (defun coe-code-export-code ()
   "Export all snippets to a 'code' directory."
   (interactive)
-  (coe-code--export "code" #'coe-code--export-code-overlay))
+  (coe-code--export-org "code" #'coe-code--export-code-overlay))
 
 (defun coe-code-export-scratch ()
   "Export all snippets to a 'scratch' directory."
   (interactive)
-  (coe-code--export "scratch" #'coe-code--export-scratch-overlay))
+  (coe-code--export-org "scratch" #'coe-code--export-scratch-overlay))
+
+(defun coe-code-read-export ()
+  "Export all read snippets to a directory."
+  (interactive)
+  (coe-code--read-sort-steps)
+  (let* ((texts (--map (car it) coe-code--read-steps))
+         (steps (--map (--map (cons 'add it) (cdr it)) coe-code--read-steps))
+         (src (buffer-string))
+         (dir (concat default-directory (format "/%s/" "read"))))
+    (delete-directory dir t)
+    (make-directory dir)
+    (with-temp-buffer
+      (insert (s-join "\n" texts))
+      (write-file (concat dir "text") nil))
+    (--each-indexed steps
+      (let ((elang (coe-code--export-elang src it #'coe-code--export-code-overlay)))
+        (with-temp-buffer
+          (insert elang)
+          (write-file (concat dir (number-to-string it-index)) nil))))))
 
 ;; Minor mode
 
@@ -435,8 +597,10 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
   nil
   nil
   `((,(kbd "C-c c") . ,#'coe-code-step)
+    (,(kbd "C-c a") . ,#'coe-code-diff-add)
     (,(kbd "C-c r") . ,#'coe-code-scratch-region)
     (,(kbd "C-c p") . ,#'coe-code-scratch-point)
+    (,(kbd "C-c 0") . ,#'coe-code-omit)
     (,(kbd "C-c e") . ,#'coe-code-export-scratch)
     (,(kbd "C-c <backspace>") . ,#'coe-code-delete))
   (message "Mode %s" coe-code-scratch-mode)
@@ -448,6 +612,26 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
     (progn (coe-code-save-scratch)
            (coe-code--delete-overlays)
            (remove-hook 'before-save-hook #'coe-code-save-scratch t))))
+
+(define-minor-mode
+  coe-code-read-mode
+  "Mode for code.el files in the craft of emacs book.
+  \\{coe-code-read-mode-map}"
+  nil
+  nil
+  `((,(kbd "C-c a") . ,#'coe-code-read-highlight)
+    (,(kbd "C-c <backspace>") . ,#'coe-code-read-delete)
+    (,(kbd "C-c <right>") . ,#'coe-code-read-forward)
+    (,(kbd "C-c <left>") . ,#'coe-code-read-backward)
+    (,(kbd "C-c e") . ,#'coe-code-read-export))
+  (if coe-code-read-mode
+      ;; Enable coe
+      (progn (add-hook 'before-save-hook #'coe-code-read-save nil t)
+             (coe-code-read-load))
+    ;; Disable coe
+    (progn (coe-code-read-save)
+           (coe-code--delete-overlays)
+           (remove-hook 'before-save-hook #'coe-code-read-save t))))
 
 ;; Book
 
