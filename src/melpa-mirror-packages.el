@@ -134,6 +134,8 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (push '("lambda" . 955) prettify-symbols-alist)))
+;; For some reason, `SPC' doesn't get bound to `edebug-next-mode' unless we
+;; normalize the keymaps. It is bound to `evil-forward-char' instead.
 (add-hook 'edebug-mode-hook 'evil-normalize-keymaps)
 
 (add-hook 'css-mode-hook 'code-mode)
