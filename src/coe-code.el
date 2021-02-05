@@ -211,6 +211,22 @@ surrounded."
         (pcase-let ((`((,start . ,end) . ,type) it))
           (coe-code--overlay-insert start end type))))))
 
+(defun coe-code--sexp-save (filename sexps)
+  "Save the list of sexps to a file."
+  (when sexps
+    (with-temp-buffer
+      (insert "(\n")
+      (--each sexps (insert (format "%S\n" it)))
+      (insert ")")
+      (write-region nil nil filename))))
+
+(defun coe-code--sexp-load (filename)
+  "Load the sexp from a file."
+  (when (file-exists-p filename)
+    (with-temp-buffer
+      (insert-file-contents filename)
+      (read (buffer-string)))))
+
 ;; Diff faces
 
 (defun coe-code--diff-filename (buf)
@@ -364,17 +380,21 @@ highlighted.")
         (insert ")")
         (write-region nil nil filename)))))
 
+(defun coe-code-read-save ()
+  "Save the steps to a file."
+  (interactive)
+  (coe-code--read-sort-steps)
+  (coe-code--sexp-save
+   (coe-code--read-filename (current-buffer))
+   (--map (cons (car it) (coe-code--markers-to-pos (cdr it))) coe-code--read-steps)))
+
 (defun coe-code-read-load ()
   "Load the step regions from a file."
-  (let ((filename (coe-code--read-filename (current-buffer))))
-    (when (file-exists-p filename)
-      (let* ((step-sexpr (with-temp-buffer
-                           (insert-file-contents filename)
-                           (read (buffer-string))))
-             (steps
-              (--map (cons (car it)
-                           (coe-code--markers-from-pos (cdr it))) step-sexpr)))
-        (setq-local coe-code--read-steps steps)))
+  (let* ((filename (coe-code--read-filename (current-buffer)))
+         (steps (--map (cons (car it)
+                             (coe-code--markers-from-pos (cdr it)))
+                       (coe-code--sexp-load filename))))
+    (setq-local coe-code--read-steps steps)
     ;; We step forward to number 0
     (setq-local coe-code--read-step-number -1)
     (coe-code-read-forward)))
@@ -447,6 +467,143 @@ highlighted.")
                                          (cdr s))))
                           `(,text . ((,begin . ,end) . ,next-regions)))))
                      coe-code--read-steps))
+        (delete-overlay o)))))
+
+;; Stepper
+
+(cl-defstruct (coe-code--stepper-step (:constructor coe-code--stepper-step-make))
+  (text nil :documentation "The text to show." :read-only t)
+  (code nil :documentation "The elisp code." :read-only t)
+  (regions nil :documentation "A list of highlighted regions." :read-only t))
+
+(defvar-local coe-code--stepper-steps nil "A list of steps.")
+(defvar-local coe-code--stepper-step-number 0 "The index of the current step.")
+
+(defun coe-code--stepper-filename (buf)
+  "Computes the name of the stepper.el file"
+  (concat (file-name-directory (buffer-file-name buf))
+          "stepper.el"))
+(defface coe-code-stepper-face '((t :background "#797282"))
+  "The face for the stepper code overlay.")
+
+(defun coe-code--stepper-goto (n)
+  "Go to step N in the step list."
+  (coe-code--delete-overlays)
+  (let ((step (nth n coe-code--stepper-steps)))
+    (if step
+        (progn
+          ;; TODO : This should be in another buffer
+          (message (coe-code--stepper-step-text step))
+          (erase-buffer)
+          (insert (coe-code--stepper-step-code step))
+           ;; TODO : Stepper should have its own type
+          (--each (coe-code--stepper-step-regions step)
+            (coe-code--overlay-insert (car it) (cdr it) 'add)))
+      (message "New step: %s" n))))
+
+(defun coe-code--stepper-sort-steps ()
+  (setq-local
+   coe-code--stepper-steps
+   (--map
+    (let* ((regions (coe-code--stepper-step-regions it))
+           (next-regions (--remove
+                          (= (car it) (cdr it))
+                          (--sort (< (car it) (car other)) regions))))
+      (coe-code--stepper-step-make
+       :text (coe-code--stepper-step-text it)
+       :code (coe-code--stepper-step-code it)
+       :regions next-regions))
+    coe-code--stepper-steps)))
+  
+
+(defun coe-code-stepper-save ()
+  "Save the steps to a file."
+  (interactive)
+  (coe-code--stepper-code-update)
+  (coe-code--stepper-sort-steps)
+  (coe-code--sexp-save
+   (coe-code--stepper-filename (current-buffer))
+   coe-code--stepper-steps))
+
+(defun coe-code-stepper-load ()
+  "Load the step regions from a file."
+  (let* ((filename (coe-code--stepper-filename (current-buffer)))
+         (steps (coe-code--sexp-load filename)))
+    (setq-local coe-code--stepper-steps steps)
+    ;; We step forward to number 0
+    (setq-local coe-code--stepper-step-number -1)
+    (coe-code-stepper-forward)))
+
+(defun coe-code-stepper-forward ()
+  "Go to the next step."
+  (interactive)
+  (when (> coe-code--stepper-step-number 0) (coe-code--stepper-code-update))
+  (when (= coe-code--stepper-step-number (- (length coe-code--stepper-steps) 1))
+    ;; We’ve reached the last step
+    (let ((name (read-string "Descrption: " )))
+      (setq-local coe-code--stepper-steps
+                  (-snoc coe-code--stepper-steps
+                          (coe-code--stepper-step-make
+                           :text name
+                           :code (buffer-substring-no-properties (point-min)
+                                                                 (point-max))
+                           :regions nil)))))
+  (setq-local coe-code--stepper-step-number (+ coe-code--stepper-step-number 1))
+  (coe-code--stepper-goto coe-code--stepper-step-number))
+
+(defun coe-code-stepper-backward ()
+  "Go to the previous step."
+  (interactive)
+  (if (> coe-code--stepper-step-number 0)
+      (progn (coe-code--stepper-code-update)
+             (setq coe-code--stepper-step-number (- coe-code--stepper-step-number 1))
+             (coe-code--stepper-goto coe-code--stepper-step-number))
+    (message "Cannot step backwards - no previous step.")))
+
+(defun coe-code-stepper-highlight (begin end)
+  "Highlights a region as part of the current step."
+  (interactive "r")
+  (setq-local coe-code--stepper-steps
+              (--update-at
+               coe-code--stepper-step-number
+               (coe-code--stepper-step-make
+                :text (coe-code--stepper-step-text it)
+                :code (coe-code--stepper-step-code it)
+                :regions (cons (cons begin end) (coe-code--stepper-step-regions it)))
+               coe-code--stepper-steps))
+  ;; TODO : Have a specific type for the stepperer
+  (coe-code--overlay-insert begin end 'add)
+  (deactivate-mark))
+
+(defun coe-code--stepper-code-update ()
+  "Uses the buffer code for the current step."
+  (setq-local coe-code--stepper-steps
+              (--update-at
+               coe-code--stepper-step-number
+               (coe-code--stepper-step-make
+                :text (coe-code--stepper-step-text it)
+                :code (buffer-substring-no-properties (point-min) (point-max))
+                :regions (coe-code--stepper-step-regions it))
+               coe-code--stepper-steps)))
+
+(defun coe-code-stepper-delete ()
+  "Delete the overlay at point."
+  (interactive)
+  (let ((os (--filter (overlay-get it 'coe-type) (overlays-at (point)))))
+    (-each os
+      (lambda (o)
+        (setq-local coe-code--stepper-steps
+                    (--update-at
+                     coe-code--stepper-step-number
+                     (let ((next-regions
+                            (--remove (equal it (cons (overlay-start o)
+                                                      (overlay-end o)))
+                                      (coe-code--stepper-step-regions it))))
+                       (coe-code--stepper-step-make
+                        :text (coe-code--stepper-step-text it)
+                        :code (coe-code--stepper-step-code it)
+                        :regions next-regions))
+                     coe-code--stepper-steps))
         (delete-overlay o)))))
 
 ;; Export
@@ -592,6 +749,25 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
           (insert elang)
           (write-file (concat dir (number-to-string it-index)) nil))))))
 
+(defun coe-code-stepper-export ()
+  "Export all stepper snippets to a directory."
+  (interactive)
+  (coe-code--stepper-sort-steps)
+  (let* ((texts (--map (coe-code--stepper-step-text it) coe-code--stepper-steps))
+         (dir (concat default-directory (format "/%s/" "stepper"))))
+    (delete-directory dir t)
+    (make-directory dir)
+    (with-temp-buffer
+      (insert (s-join "\n" texts))
+      (write-file (concat dir "text") nil))
+    (--each-indexed coe-code--stepper-steps
+      (let* ((src (coe-code--stepper-step-code it))
+             (annotations (--map (cons 'add it) (coe-code--stepper-step-regions it)))
+            (elang (coe-code--export-elang src annotations #'coe-code--export-code-overlay)))
+        (with-temp-buffer
+          (insert elang)
+          (write-file (concat dir (number-to-string it-index)) nil))))))
+
 ;; Minor mode
 
 (define-minor-mode
@@ -659,6 +835,26 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
     (progn (coe-code-read-save)
            (coe-code--delete-overlays)
            (remove-hook 'before-save-hook #'coe-code-read-save t))))
+
+(define-minor-mode
+  coe-code-stepper-mode
+  "Mode for code.el files in the craft of emacs book.
+  \\{coe-code-stepper-mode-map}"
+  nil
+  nil
+  `((,(kbd "C-c a") . ,#'coe-code-stepper-highlight)
+    (,(kbd "C-c <backspace>") . ,#'coe-code-stepper-delete)
+    (,(kbd "C-c <right>") . ,#'coe-code-stepper-forward)
+    (,(kbd "C-c <left>") . ,#'coe-code-stepper-backward)
+    (,(kbd "C-c e") . ,#'coe-code-stepper-export))
+  (if coe-code-stepper-mode
+      ;; Enable coe
+      (progn (add-hook 'before-save-hook #'coe-code-stepper-save nil t)
+             (coe-code-stepper-load))
+    ;; Disable coe
+    (progn (coe-code-stepper-save)
+           (coe-code--delete-overlays)
+           (remove-hook 'before-save-hook #'coe-code-stepper-save t))))
 
 ;; Book
 
