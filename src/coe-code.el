@@ -404,7 +404,7 @@ highlighted.")
   (interactive)
   (when (= coe-code--read-step-number (- (length coe-code--read-steps) 1))
     ;; We’ve reached the last step
-    (let ((name (read-string "Descrption: " )))
+    (let ((name (read-string "Description: " )))
       (setq-local coe-code--read-steps
                   (append coe-code--read-steps `((,name . nil))))))
   (setq-local coe-code--read-step-number (+ coe-code--read-step-number 1))
@@ -478,11 +478,14 @@ highlighted.")
 
 (defvar-local coe-code--stepper-steps nil "A list of steps.")
 (defvar-local coe-code--stepper-step-number 0 "The index of the current step.")
+(defvar-local coe-code--stepper-filename nil "The file to save the steps in.")
 
-(defun coe-code--stepper-filename (buf)
-  "Computes the name of the stepper.el file"
-  (concat (file-name-directory (buffer-file-name buf))
-          "stepper.el"))
+(defun coe-code--stepper-dir ()
+  "Computes the name of the stepper export directory."
+  (concat default-directory
+          (file-name-sans-extension (file-name-nondirectory coe-code--stepper-filename))
+          "-stepper/"))
+
 (defface coe-code-stepper-face '((t :background "#797282"))
   "The face for the stepper code overlay.")
 
@@ -496,9 +499,15 @@ highlighted.")
           (message (coe-code--stepper-step-text step))
           (erase-buffer)
           (insert (coe-code--stepper-step-code step))
-           ;; TODO : Stepper should have its own type
+          ;; TODO : Stepper should have its own type
           (--each (coe-code--stepper-step-regions step)
-            (coe-code--overlay-insert (car it) (cdr it) 'add)))
+            (coe-code--overlay-insert (car it) (cdr it) 'add))
+          (setq-local header-line-format (list
+                                          (buffer-name)
+                                          " -- "
+                                          (number-to-string coe-code--stepper-step-number)
+                                          ": "
+                                          (coe-code--stepper-step-text step))))
       (message "New step: %s" n))))
 
 (defun coe-code--stepper-sort-steps ()
@@ -514,7 +523,7 @@ highlighted.")
        :code (coe-code--stepper-step-code it)
        :regions next-regions))
     coe-code--stepper-steps)))
-  
+
 
 (defun coe-code-stepper-save ()
   "Save the steps to a file."
@@ -522,17 +531,8 @@ highlighted.")
   (coe-code--stepper-code-update)
   (coe-code--stepper-sort-steps)
   (coe-code--sexp-save
-   (coe-code--stepper-filename (current-buffer))
+   coe-code--stepper-filename
    coe-code--stepper-steps))
-
-(defun coe-code-stepper-load ()
-  "Load the step regions from a file."
-  (let* ((filename (coe-code--stepper-filename (current-buffer)))
-         (steps (coe-code--sexp-load filename)))
-    (setq-local coe-code--stepper-steps steps)
-    ;; We step forward to number 0
-    (setq-local coe-code--stepper-step-number -1)
-    (coe-code-stepper-forward)))
 
 (defun coe-code-stepper-forward ()
   "Go to the next step."
@@ -540,14 +540,14 @@ highlighted.")
   (when (> coe-code--stepper-step-number 0) (coe-code--stepper-code-update))
   (when (= coe-code--stepper-step-number (- (length coe-code--stepper-steps) 1))
     ;; We’ve reached the last step
-    (let ((name (read-string "Descrption: " )))
+    (let ((name (read-string "Description: " )))
       (setq-local coe-code--stepper-steps
                   (-snoc coe-code--stepper-steps
-                          (coe-code--stepper-step-make
-                           :text name
-                           :code (buffer-substring-no-properties (point-min)
-                                                                 (point-max))
-                           :regions nil)))))
+                         (coe-code--stepper-step-make
+                          :text name
+                          :code (buffer-substring-no-properties (point-min)
+                                                                (point-max))
+                          :regions nil)))))
   (setq-local coe-code--stepper-step-number (+ coe-code--stepper-step-number 1))
   (coe-code--stepper-goto coe-code--stepper-step-number))
 
@@ -571,7 +571,7 @@ highlighted.")
                 :code (coe-code--stepper-step-code it)
                 :regions (cons (cons begin end) (coe-code--stepper-step-regions it)))
                coe-code--stepper-steps))
-  ;; TODO : Have a specific type for the stepperer
+  ;; TODO : Have a specific type for the stepper
   (coe-code--overlay-insert begin end 'add)
   (deactivate-mark))
 
@@ -754,7 +754,7 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
   (interactive)
   (coe-code--stepper-sort-steps)
   (let* ((texts (--map (coe-code--stepper-step-text it) coe-code--stepper-steps))
-         (dir (concat default-directory (format "/%s/" "stepper"))))
+         (dir (coe-code--stepper-dir)))
     (delete-directory dir t)
     (make-directory dir)
     (with-temp-buffer
@@ -838,7 +838,7 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
 
 (define-minor-mode
   coe-code-stepper-mode
-  "Mode for code.el files in the craft of emacs book.
+  "Mode for stepper buffer in the craft of emacs book.
   \\{coe-code-stepper-mode-map}"
   nil
   nil
@@ -846,15 +846,26 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
     (,(kbd "C-c <backspace>") . ,#'coe-code-stepper-delete)
     (,(kbd "C-c <right>") . ,#'coe-code-stepper-forward)
     (,(kbd "C-c <left>") . ,#'coe-code-stepper-backward)
-    (,(kbd "C-c e") . ,#'coe-code-stepper-export))
-  (if coe-code-stepper-mode
-      ;; Enable coe
-      (progn (add-hook 'before-save-hook #'coe-code-stepper-save nil t)
-             (coe-code-stepper-load))
-    ;; Disable coe
-    (progn (coe-code-stepper-save)
-           (coe-code--delete-overlays)
-           (remove-hook 'before-save-hook #'coe-code-stepper-save t))))
+    (,(kbd "C-c e") . ,#'coe-code-stepper-export)
+    (,(kbd "C-c q") . ,#'coe-code-stepper-save)))
+
+(defun coe-code-find-stepper (filename)
+  "Open a stepper save file for editing steps."
+  (interactive
+   (list
+    (read-file-name "Stepper save file:")))
+  (let* ((steps (coe-code--sexp-load filename))
+        (shortname (file-relative-name filename (cdr (project-current))))
+        (buf (get-buffer-create (concat "*stepper-" shortname "*"))))
+    (with-current-buffer buf
+      (emacs-lisp-mode)
+      (setq-local coe-code--stepper-filename filename)
+      (setq-local coe-code--stepper-steps steps)
+      ;; We step forward to number 0
+      (setq-local coe-code--stepper-step-number -1)
+      (coe-code-stepper-mode t)
+      (coe-code-stepper-forward))
+    (pop-to-buffer buf)))
 
 ;; Book
 
