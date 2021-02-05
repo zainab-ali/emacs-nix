@@ -193,13 +193,13 @@ surrounded."
                  (--map
                   (cons (cons (overlay-start it) (overlay-end it))
                         (overlay-get it 'coe-type))
-                  os))))
+                  os)))))
     (unless (seq-empty-p vals)
       (with-temp-buffer
         (insert "(\n")
         (--each vals (insert (format "%s\n" it)))
         (insert ")")
-      (write-region nil nil filename))))))
+        (write-region nil nil filename)))))
 
 (defun coe-code--load (filename)
   "Load the regions from a file."
