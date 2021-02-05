@@ -333,9 +333,11 @@ highlighted.")
   (coe-code--delete-overlays)
   (pcase (nth n coe-code--read-steps)
     (`(,text . ,regions)
+     ;; TODO : This should be in another buffer
      (message text)
      ;; TODO : Read should have its own type
-     (--each regions (coe-code--overlay-insert (car it) (cdr it) 'add)))
+     (--each (coe-code--markers-to-pos regions)
+       (coe-code--overlay-insert (car it) (cdr it) 'add)))
     (_ (message "New step: %s" n))))
 
 (defun coe-code--read-sort-steps ()
@@ -343,15 +345,18 @@ highlighted.")
               (--map
                (pcase it
                  (`(,text . ,regions)
-                  `(,text . ,(--sort (< (car it) (car other)) regions))))
+                  `(,text . ,(--sort (< (marker-position (car it))
+                                        (marker-position (car other)))
+                                     regions))))
                coe-code--read-steps)))
 
 (defun coe-code-read-save ()
   "Save the steps to a file."
   (interactive)
   (coe-code--read-sort-steps)
-  (let ((filename (coe-code--read-filename (current-buffer)))
-        (steps coe-code--read-steps))
+  (let* ((filename (coe-code--read-filename (current-buffer)))
+         (steps
+          (--map (cons (car it) (coe-code--markers-to-pos (cdr it))) coe-code--read-steps)))
     (when steps
       (with-temp-buffer
         (insert "(\n")
@@ -363,9 +368,12 @@ highlighted.")
   "Load the step regions from a file."
   (let ((filename (coe-code--read-filename (current-buffer))))
     (when (file-exists-p filename)
-      (let ((steps (with-temp-buffer
-                     (insert-file-contents filename)
-                     (read (buffer-string)))))
+      (let* ((step-sexpr (with-temp-buffer
+                           (insert-file-contents filename)
+                           (read (buffer-string))))
+             (steps
+              (--map (cons (car it)
+                           (coe-code--markers-from-pos (cdr it))) step-sexpr)))
         (setq-local coe-code--read-steps steps)))
     ;; We step forward to number 0
     (setq-local coe-code--read-step-number -1)
@@ -398,11 +406,28 @@ highlighted.")
                coe-code--read-step-number
                (pcase it
                  (`(,text . ,regions)
-                  `(,text . ((,begin . ,end) . ,regions))))
+                  `(,text . (,(coe-code--marker-from-pos (cons begin end)) . ,regions))))
                coe-code--read-steps))
   ;; TODO : Have a specific type for the reader
   (coe-code--overlay-insert begin end 'add)
   (deactivate-mark))
+
+(defun coe-code--markers-to-pos (regions)
+  "Converts a list of cons cells of markers (a list of regions) to positions."
+  (-map #'coe-code--marker-to-pos regions))
+
+(defun coe-code--marker-to-pos (region)
+  "Converts a cons cell of markers to a cons cell of position."
+  (cons (marker-position (car region)) (marker-position (cdr region))))
+
+(defun coe-code--markers-from-pos (regions)
+  "Converts a list of cons cells of positions (a list of regions) to markers."
+  (-map #'coe-code--marker-from-pos regions))
+
+(defun coe-code--marker-from-pos (region)
+  "Converts a cons cells of position to markers."
+  (cons (set-marker (make-marker) (car region))
+        (set-marker (make-marker) (cdr region))))
 
 (defun coe-code-read-delete ()
   "Delete the overlay at point."
@@ -416,7 +441,7 @@ highlighted.")
                      (pcase it
                        (`(,text . ,regions)
                         (let ((next-regions
-                               (--remove (equal it
+                               (--remove (equal (coe-code--marker-to-pos it)
                                                 (cons (overlay-start o)
                                                       (overlay-end o)))
                                          (cdr s))))
@@ -552,7 +577,8 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
   (interactive)
   (coe-code--read-sort-steps)
   (let* ((texts (--map (car it) coe-code--read-steps))
-         (steps (--map (--map (cons 'add it) (cdr it)) coe-code--read-steps))
+         (steps (--map (--map (cons 'add it) (coe-code--markers-to-pos (cdr it)))
+                       coe-code--read-steps))
          (src (buffer-string))
          (dir (concat default-directory (format "/%s/" "read"))))
     (delete-directory dir t)
