@@ -36,7 +36,8 @@
    evil-collection-eshell-setup
    evil-collection-magit-setup
    evil-collection-buff-menu-setup
-   evil-collection-proced-setup))
+   evil-collection-proced-setup
+   evil-collection-edebug-setup))
 
 (use-package
   evil-surround
@@ -133,6 +134,7 @@ and `line-end-position'."
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (push '("lambda" . 955) prettify-symbols-alist)))
+(add-hook 'edebug-mode-hook 'evil-normalize-keymaps)
 
 (add-hook 'css-mode-hook 'code-mode)
 (add-to-list 'auto-mode-alist '("\\.css.pp\\'" . css-mode))
