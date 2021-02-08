@@ -141,6 +141,12 @@ and `line-end-position'."
 (add-hook 'css-mode-hook 'code-mode)
 (add-to-list 'auto-mode-alist '("\\.css.pp\\'" . css-mode))
 
+;; Customize conf mode
+(add-hook 'conf-mode-hook 'code-mode)
+
+;; Use code-mode for all programming environments
+(add-hook 'prog-mode-hook 'code-mode)
+
 (evil-define-key 'normal Info-mode-map (kbd "l") 'evil-forward-char)
 (evil-define-key 'normal Info-mode-map (kbd "h") 'evil-backward-char)
 
