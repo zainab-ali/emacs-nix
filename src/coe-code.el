@@ -534,13 +534,34 @@ highlighted.")
    coe-code--stepper-filename
    coe-code--stepper-steps))
 
+(defconst coe-code--stepper-descriptions
+  '("..."
+    "Evaluate the list ..."
+    "Evaluate the “quote” special form ..."
+    "Evaluate the “let” special form ..."
+    ))
+
+(defun coe-code--stepper-clean (name)
+  "doc."
+  (s-replace-regexp "\"\\(.*\\)\""
+                    "“\\1”"
+                    (s-replace "..." "…" name)))
+
+(ert-deftest coe-code--stepper-clean ()
+  "Tests that the stepper cleans input text."
+  (should (equal (coe-code--stepper-clean "Eval the \"let\" special form ...")
+                 "Eval the “let” special form …")))
+
+
 (defun coe-code-stepper-forward ()
   "Go to the next step."
   (interactive)
-  (when (> coe-code--stepper-step-number 0) (coe-code--stepper-code-update))
+  (when (and coe-code--stepper-steps (>= coe-code--stepper-step-number 0))
+    (coe-code--stepper-code-update))
   (when (= coe-code--stepper-step-number (- (length coe-code--stepper-steps) 1))
     ;; We’ve reached the last step
-    (let ((name (read-string "Description: " )))
+    (let* ((dirty-name (completing-read "Description: " coe-code--stepper-descriptions))
+           (name (coe-code--stepper-clean dirty-name)))
       (setq-local coe-code--stepper-steps
                   (-snoc coe-code--stepper-steps
                          (coe-code--stepper-step-make
@@ -554,7 +575,7 @@ highlighted.")
 (defun coe-code-stepper-backward ()
   "Go to the previous step."
   (interactive)
-  (if (> coe-code--stepper-step-number 0)
+  (if (and coe-code--stepper-steps (> coe-code--stepper-step-number 0))
       (progn (coe-code--stepper-code-update)
              (setq coe-code--stepper-step-number (- coe-code--stepper-step-number 1))
              (coe-code--stepper-goto coe-code--stepper-step-number))
@@ -853,7 +874,7 @@ src-block. The overlaid text is surrounded by symbols depending on its type."
   "Open a stepper save file for editing steps."
   (interactive
    (list
-    (read-file-name "Stepper save file:")))
+    (read-file-name "Stepper save file:" (buffer-file-name))))
   (let* ((steps (coe-code--sexp-load filename))
         (shortname (file-relative-name filename (cdr (project-current))))
         (buf (get-buffer-create (concat "*stepper-" shortname "*"))))
