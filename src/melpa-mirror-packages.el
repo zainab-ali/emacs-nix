@@ -384,6 +384,8 @@ this moves the point past it."
     (setq mu4e-completing-read-function 'ivy-completing-read)
     (setq mail-user-agent 'mu4e-user-agent)))
 
+(dash-register-info-lookup)
+
 (use-package launchctl)
 (use-package yaml-mode)
 
