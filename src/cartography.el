@@ -51,6 +51,10 @@ The discrete grid made by the elisp mode is converted into this.")
   "The number of cells spanning the grid.
 This is multiplied by the `cartography--scale-factor' to get the continuous cartography.rkt grid..")
 
+(defun cartography--scale-factor ()
+  "doc."
+  (/ cartography--rkt-length cartography--grid-length))
+
 (defconst cartography--types
   '(hill
     marsh
@@ -196,8 +200,8 @@ This is multiplied by the `cartography--scale-factor' to get the continuous cart
 
 (defun cartography--export-pos (grid-pos)
   "doc."
-  (cons (* cartography--scale-factor (+ 0.5 (car grid-pos)))
-        (* cartography--scale-factor (+ 0.5 (cdr grid-pos)))))
+  (cons (* (cartography--scale-factor) (+ 0.5 (car grid-pos)))
+        (* (cartography--scale-factor) (+ 0.5 (cdr grid-pos)))))
 
 (defun cartography-export ()
   "Export to pollen."
