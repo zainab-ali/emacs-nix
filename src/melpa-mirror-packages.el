@@ -87,9 +87,6 @@
     (evil-collection-magit-setup))
 (add-to-list 'Info-file-list-for-emacs "magit")
 
-(use-package evil-magit
-  :after (magit evil))
-
 (use-package forge
   :after magit)
 
