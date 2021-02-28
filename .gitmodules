@@ -4,3 +4,9 @@
 [submodule "src/nano-emacs"]
 	path = src/nano-emacs
 	url = git@github.com:zainab-ali/nano-emacs.git
+[submodule "src/coe"]
+	path = src/coe
+	url = https://git.sr.ht/~zainab/coe
+[submodule "src/fandango"]
+	path = src/fandango
+	url = https://git.sr.ht/~yilin/fandango
