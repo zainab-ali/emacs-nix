@@ -10,3 +10,6 @@
 [submodule "src/fandango"]
 	path = src/fandango
 	url = https://git.sr.ht/~yilin/fandango
+[submodule "src/browse-repositories"]
+	path = src/browse-repositories
+	url = https://git.sr.ht/~zainab/browse-repositories
